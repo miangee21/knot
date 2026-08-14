@@ -1,26 +1,117 @@
+/* src/app/globals.css */
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 40 20% 98%;
+    --foreground: 30 10% 8%;
+
+    --card: 40 15% 96%;
+    --card-foreground: 30 10% 8%;
+
+    --primary: 38 92% 50%; /* Knot amber */
+    --primary-foreground: 30 30% 10%;
+
+    --secondary: 30 8% 90%;
+    --secondary-foreground: 30 10% 15%;
+
+    --muted: 30 8% 90%;
+    --muted-foreground: 30 6% 40%;
+
+    --accent: 30 8% 86%;
+    --accent-foreground: 30 10% 15%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 8% 84%;
+    --input: 30 8% 84%;
+    --ring: 38 92% 50%;
+
+    /* Capacity-bar colors — driven by % used, not category */
+    --capacity-low: 142 60% 40%; /* < 60% used */
+    --capacity-medium: 38 92% 50%; /* 60–85% used */
+    --capacity-high: 0 72% 51%; /* > 85% used */
+
+    /* Location "kind" accents — badges only, never large surfaces */
+    --kind-hard: 217 80% 55%;
+    --kind-cloud: 199 85% 55%;
+    --kind-mobile: 280 60% 60%;
+    --kind-os: 30 6% 50%;
+
+    --radius: 999px; /* pill default; cards override locally to 12–16px */
+  }
+
+  .dark {
+    --background: 30 8% 7%;
+    --foreground: 40 20% 95%;
+
+    --card: 30 8% 10%;
+    --card-foreground: 40 20% 95%;
+
+    --primary: 38 92% 55%;
+    --primary-foreground: 30 30% 10%;
+
+    --secondary: 30 6% 15%;
+    --secondary-foreground: 40 20% 95%;
+
+    --muted: 30 6% 15%;
+    --muted-foreground: 30 6% 62%;
+
+    --accent: 30 6% 19%;
+    --accent-foreground: 40 20% 95%;
+
+    --destructive: 0 65% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 6% 20%;
+    --input: 30 6% 20%;
+    --ring: 38 92% 55%;
+
+    --capacity-low: 142 55% 45%;
+    --capacity-medium: 38 92% 55%;
+    --capacity-high: 0 65% 55%;
+
+    --kind-hard: 217 80% 62%;
+    --kind-cloud: 199 85% 62%;
+    --kind-mobile: 280 55% 65%;
+    --kind-os: 30 6% 60%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .bg-capacity-low {
+    background-color: hsl(var(--capacity-low));
+  }
+  .bg-capacity-medium {
+    background-color: hsl(var(--capacity-medium));
+  }
+  .bg-capacity-high {
+    background-color: hsl(var(--capacity-high));
+  }
+
+  .text-kind-hard {
+    color: hsl(var(--kind-hard));
+  }
+  .text-kind-cloud {
+    color: hsl(var(--kind-cloud));
+  }
+  .text-kind-mobile {
+    color: hsl(var(--kind-mobile));
+  }
+  .text-kind-os {
+    color: hsl(var(--kind-os));
+  }
 }

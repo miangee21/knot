@@ -1,0 +1,1 @@
+//convex/locations.ts

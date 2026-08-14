@@ -1,0 +1,1 @@
+//src/features/categories/types.ts

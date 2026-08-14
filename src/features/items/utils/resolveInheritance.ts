@@ -1,0 +1,1 @@
+//src/features/items/utils/resolveInheritance.ts

@@ -1,0 +1,1 @@
+//src/app/(dashboard)/locations/page.tsx
