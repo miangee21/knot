@@ -4,16 +4,26 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  ShieldAlert,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/shared/components/ui/button";
 import { signupSchema, SignupFormData } from "../types";
 import { useAuthActions } from "../hooks/useAuthActions";
+import { useSignupEnabled } from "../hooks/useSignupEnabled";
 
 export function SignupForm() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const { handleSignup } = useAuthActions();
+  const { signupEnabled } = useSignupEnabled();
 
   const {
     register,
@@ -29,6 +39,7 @@ export function SignupForm() {
   });
 
   const onSubmit = async (data: SignupFormData) => {
+    if (!signupEnabled) return;
     setIsLoading(true);
     await handleSignup(data);
     setIsLoading(false);
@@ -120,11 +131,19 @@ export function SignupForm() {
           )}
         </div>
 
+        {/* Closed Signups Alert */}
+        {!signupEnabled && (
+          <div className="flex items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive font-medium mt-4">
+            <ShieldAlert className="w-5 h-5 shrink-0" />
+            New signups are currently closed.
+          </div>
+        )}
+
         {/* Submit Button */}
         <Button
           type="submit"
-          disabled={isLoading}
-          className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-all mt-2 shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:-translate-y-px"
+          disabled={isLoading || !signupEnabled}
+          className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-all mt-2 shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:-translate-y-px disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />

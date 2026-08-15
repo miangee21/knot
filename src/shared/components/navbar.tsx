@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, ChevronDown, ShieldCheck } from "lucide-react";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 import { api } from "../../../convex/_generated/api";
 import { ThemeToggle } from "@/features/theme/components/ThemeToggle";
 import {
@@ -25,6 +26,7 @@ export function Navbar() {
   // Fetch user data from the convex function
   const user = useQuery(api.users.getCurrentUser);
   const initials = user?.name ? user.name.charAt(0).toUpperCase() : "U";
+  const { isAdmin } = useIsAdmin();
 
   const navLinks = [
     { name: "Locations", path: "/locations" },
@@ -121,16 +123,18 @@ export function Navbar() {
               {/* Solid divider line */}
               <DropdownMenuSeparator className="bg-primary/40 h-px my-2 -mx-1.5 w-auto" />
 
-              {/* Admin Settings Link inside Dropdown */}
-              <Link
-                href="/admin/settings"
-                className="w-full outline-none block"
-              >
-                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 focus:bg-muted mt-1 text-foreground font-semibold">
-                  <ShieldCheck className="mr-3 h-4.5 w-4.5 text-foreground/80" />
-                  <span className="text-[14px]">Admin Settings</span>
-                </DropdownMenuItem>
-              </Link>
+              {/* Admin Settings Link inside Dropdown (Only for Admins) */}
+              {isAdmin && (
+                <Link
+                  href="/admin/settings"
+                  className="w-full outline-none block"
+                >
+                  <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 focus:bg-muted mt-1 text-foreground font-semibold">
+                    <ShieldCheck className="mr-3 h-4.5 w-4.5 text-foreground/80" />
+                    <span className="text-[14px]">Admin Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+              )}
 
               {/* Logout Button  */}
               <DropdownMenuItem

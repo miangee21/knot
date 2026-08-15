@@ -56,4 +56,10 @@ export default defineSchema({
       searchField: "name",
       filterFields: ["userId"],
     }),
+
+  // Global App Settings (e.g., signup toggles)
+  appSettings: defineTable({
+    key: v.string(),
+    value: v.boolean(),
+  }).index("by_key", ["key"]),
 });
