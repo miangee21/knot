@@ -11,6 +11,7 @@
 import type * as appSettings from "../appSettings.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as locations from "../locations.js";
 import type * as users from "../users.js";
 
 import type {
@@ -23,6 +24,7 @@ declare const fullApi: ApiFromModules<{
   appSettings: typeof appSettings;
   auth: typeof auth;
   http: typeof http;
+  locations: typeof locations;
   users: typeof users;
 }>;
 
