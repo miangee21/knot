@@ -1,83 +1,114 @@
 /* src/app/globals.css */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+}
+
 @layer base {
   :root {
-    --background: 40 20% 98%;
-    --foreground: 30 10% 8%;
+    /* Light Mode: White background, solid blue accents */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
-    --card: 40 15% 96%;
-    --card-foreground: 30 10% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --primary: 38 92% 50%; /* Knot amber */
-    --primary-foreground: 30 30% 10%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 30 8% 90%;
-    --secondary-foreground: 30 10% 15%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 30 8% 90%;
-    --muted-foreground: 30 6% 40%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 30 8% 86%;
-    --accent-foreground: 30 10% 15%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 30 8% 84%;
-    --input: 30 8% 84%;
-    --ring: 38 92% 50%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
-    /* Capacity-bar colors — driven by % used, not category */
-    --capacity-low: 142 60% 40%; /* < 60% used */
-    --capacity-medium: 38 92% 50%; /* 60–85% used */
-    --capacity-high: 0 72% 51%; /* > 85% used */
+    /* Capacity-bar colors */
+    --capacity-low: 142 71% 45%;
+    --capacity-medium: 221 83% 53%;
+    --capacity-high: 0 84% 60%;
 
-    /* Location "kind" accents — badges only, never large surfaces */
+    /* Location "kind" accents — badges only */
     --kind-hard: 217 80% 55%;
     --kind-cloud: 199 85% 55%;
     --kind-mobile: 280 60% 60%;
-    --kind-os: 30 6% 50%;
+    --kind-os: 215 16% 47%;
 
-    --radius: 999px; /* pill default; cards override locally to 12–16px */
+    /* Pill default; cards override locally */
+    --radius: 999px;
   }
 
   .dark {
-    --background: 30 8% 7%;
-    --foreground: 40 20% 95%;
+    /* Dark Mode: Deep blue-gray background, vibrant blue accents */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
 
-    --card: 30 8% 10%;
-    --card-foreground: 40 20% 95%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --primary: 38 92% 55%;
-    --primary-foreground: 30 30% 10%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 30 6% 15%;
-    --secondary-foreground: 40 20% 95%;
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 30 6% 15%;
-    --muted-foreground: 30 6% 62%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 30 6% 19%;
-    --accent-foreground: 40 20% 95%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 65% 48%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 30 6% 20%;
-    --input: 30 6% 20%;
-    --ring: 38 92% 55%;
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 217 91% 60%;
 
     --capacity-low: 142 55% 45%;
-    --capacity-medium: 38 92% 55%;
+    --capacity-medium: 217 91% 60%;
     --capacity-high: 0 65% 55%;
 
     --kind-hard: 217 80% 62%;
     --kind-cloud: 199 85% 62%;
     --kind-mobile: 280 55% 65%;
-    --kind-os: 30 6% 60%;
+    --kind-os: 215 20% 65%;
   }
 }
 
@@ -85,6 +116,7 @@
   * {
     border-color: hsl(var(--border));
   }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
@@ -92,25 +124,32 @@
 }
 
 @layer utilities {
+  /* Capacity bars */
   .bg-capacity-low {
     background-color: hsl(var(--capacity-low));
   }
+
   .bg-capacity-medium {
     background-color: hsl(var(--capacity-medium));
   }
+
   .bg-capacity-high {
     background-color: hsl(var(--capacity-high));
   }
 
+  /* Location kind accents */
   .text-kind-hard {
     color: hsl(var(--kind-hard));
   }
+
   .text-kind-cloud {
     color: hsl(var(--kind-cloud));
   }
+
   .text-kind-mobile {
     color: hsl(var(--kind-mobile));
   }
+
   .text-kind-os {
     color: hsl(var(--kind-os));
   }

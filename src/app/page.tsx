@@ -1,13 +1,15 @@
 //src/app/page.tsx
-import { Button } from "@/shared/components/ui/button";
+import { redirect } from "next/navigation";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 
-export default function Home() {
-  return (
-    <>
-      <div className="text-4xl text-blue-950 font-bold justify-center items-center flex flex-col min-h-screen">
-        <p>hey this is main page</p>
-        <Button variant={"secondary"}>Click Me</Button>
-      </div>
-    </>
-  );
+export default async function HomePage() {
+  // Check if user is authenticated via Convex Server Token
+  const isAuthenticated = await convexAuthNextjsToken();
+
+  if (!isAuthenticated) {
+    redirect("/login");
+  }
+
+  // If logged in, go straight to the dashboard
+  redirect("/locations");
 }
