@@ -67,12 +67,12 @@ export function PosterUploadField({
       />
 
       {previewUrl ? (
-        <div className="relative w-full h-48 sm:h-56 rounded-3xl overflow-hidden border border-border/80 group bg-muted/30 shadow-sm">
+        <div className="relative w-full h-36 rounded-3xl overflow-hidden border border-border/80 group bg-muted/30 shadow-sm">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
             alt="Poster preview"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover rounded-3xl transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
             <button

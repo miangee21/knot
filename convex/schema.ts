@@ -48,6 +48,7 @@ export default defineSchema({
     posterUrl: v.optional(v.string()),
     posterPublicId: v.optional(v.string()),
 
+    poster: v.optional(v.string()),
     notes: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
