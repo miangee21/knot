@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, ChevronDown, ShieldCheck } from "lucide-react";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -21,6 +21,7 @@ import { toast } from "sonner";
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { signOut } = useAuthActions();
 
   // Fetch user data from the convex function
@@ -141,6 +142,7 @@ export function Navbar() {
                 onClick={async () => {
                   try {
                     await signOut();
+                    router.replace("/login");
                     toast.success("Logged out successfully", {
                       description: "You have been securely signed out of Knot.",
                     });
