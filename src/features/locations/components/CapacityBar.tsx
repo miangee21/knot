@@ -1,48 +1,38 @@
 //src/features/locations/components/CapacityBar.tsx
-import { Progress } from "@/shared/components/ui/progress";
+"use client";
+
 import { capacityLevel } from "../utils/formatBytes";
-import { cn } from "@/shared/lib/utils";
 
 interface CapacityBarProps {
   usedBytes?: number;
   totalBytes?: number;
-  className?: string;
 }
 
 export function CapacityBar({
-  usedBytes,
-  totalBytes,
-  className,
+  usedBytes = 0,
+  totalBytes = 0,
 }: CapacityBarProps) {
-  // If data is missing, show an empty bar
-  if (usedBytes === undefined || totalBytes === undefined || totalBytes === 0) {
-    return (
-      <Progress
-        value={0}
-        className={cn("h-1.5 w-full bg-secondary", className)}
-      />
-    );
-  }
+  // Calculate percentage to set the width of the progress bar
+  const percentage =
+    totalBytes > 0 ? Math.min((usedBytes / totalBytes) * 100, 100) : 0;
 
-  const percentage = Math.min(100, Math.max(0, (usedBytes / totalBytes) * 100));
+  // Get the danger level using your utility function
   const level = capacityLevel(usedBytes, totalBytes);
 
-  // Dynamically applying the background color to the inner indicator div
-  const indicatorColorClass =
+  // Dynamically assign colors from globals.css based on the level
+  const colorClass =
     level === "high"
-      ? "[&>div]:bg-capacity-high"
+      ? "bg-[hsl(var(--capacity-high))]"
       : level === "medium"
-        ? "[&>div]:bg-capacity-medium"
-        : "[&>div]:bg-capacity-low";
+        ? "bg-[hsl(var(--capacity-medium))]"
+        : "bg-[hsl(var(--capacity-low))]";
 
   return (
-    <Progress
-      value={percentage}
-      className={cn(
-        "h-1.5 w-full bg-secondary/50",
-        indicatorColorClass,
-        className,
-      )}
-    />
+    <div className="h-1.5 w-full bg-secondary/80 overflow-hidden rounded-full">
+      <div
+        className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
+        style={{ width: `${percentage}%` }}
+      />
+    </div>
   );
 }

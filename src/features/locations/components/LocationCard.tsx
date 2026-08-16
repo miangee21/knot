@@ -73,10 +73,10 @@ export function LocationCard({
     : "Unknown";
 
   return (
-    <div className="group flex flex-col justify-between p-4 bg-card/40 hover:bg-card border border-border/50 hover:border-border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
+    <div className="group flex flex-col justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-white/3 dark:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] hover:border-primary/50 hover:-translate-y-1 transition-all duration-300">
       <div className="flex items-start justify-between mb-4">
-        <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center border border-border/30 group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
-          <IconComponent className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        <div className="w-12 h-12 rounded-2xl bg-secondary/80 flex items-center justify-center border border-border/50 group-hover:bg-primary/10 group-hover:border-primary/30 transition-all">
+          <IconComponent className="w-5 h-5 text-foreground group-hover:text-primary transition-colors" />
         </div>
 
         <DropdownMenu>

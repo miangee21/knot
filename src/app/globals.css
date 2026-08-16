@@ -59,10 +59,10 @@
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
 
-    /* Capacity-bar colors */
-    --capacity-low: 142 71% 45%;
-    --capacity-medium: 221 83% 53%;
-    --capacity-high: 0 84% 60%;
+    /* Capacity Colors (Light) */
+    --capacity-low: 142.1 76.2% 36.3%; /* Emerald/Green */
+    --capacity-medium: 221.2 83.2% 53.3%; /* Blue */
+    --capacity-high: 0 84.2% 60.2%; /* Red */
 
     /* Location "kind" accents — badges only */
     --kind-hard: 217 80% 55%;
@@ -109,6 +109,11 @@
     --kind-cloud: 199 85% 62%;
     --kind-mobile: 280 55% 65%;
     --kind-os: 215 20% 65%;
+
+    /* Capacity Colors (Dark) */
+    --capacity-low: 142.1 70.6% 45.3%; /* Lighter Emerald for dark mode */
+    --capacity-medium: 217.2 91.2% 59.8%; /* Lighter Blue for dark mode */
+    --capacity-high: 0 72.2% 50.6%; /* Lighter Red for dark mode */
   }
 }
 
