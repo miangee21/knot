@@ -8,10 +8,7 @@ import {
   List as ListIcon,
   HardDrive,
   Loader2,
-  Search,
   XCircle,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
@@ -19,10 +16,12 @@ import { LocationGrid } from "@/features/locations/components/LocationGrid";
 import { LocationListRow } from "@/features/locations/components/LocationListRow";
 import { LocationFormDialog } from "@/features/locations/components/LocationFormDialog";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { SearchBar } from "@/shared/components/SearchBar";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { LocationFormData } from "@/features/locations/types";
 import { LocationDoc } from "@/features/locations/components/LocationCard";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { Pagination } from "@/shared/components/Pagination";
 
 export default function LocationsPage() {
   const { locations, isLoading, handleCreate, handleUpdate, handleDelete } =
@@ -154,16 +153,12 @@ export default function LocationsPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           {/* Search Bar */}
           {locations && locations.length > 0 && (
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search locations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-11 bg-card border border-border/60 hover:border-border focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-full pl-10 pr-4 text-sm font-medium outline-none transition-all shadow-sm placeholder:text-muted-foreground/60"
-              />
-            </div>
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search locations..."
+              className="sm:w-64"
+            />
           )}
 
           {/* View Toggles */}
@@ -256,89 +251,16 @@ export default function LocationsPage() {
             )}
 
             {/* Pagination Controls */}
-            {totalItems > 5 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border/50">
-                {/* Left: Items per page dropdown */}
-                <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
-                  <span>Show</span>
-                  <div className="relative">
-                    <select
-                      value={itemsPerPage}
-                      onChange={handleItemsPerPageChange}
-                      className="appearance-none bg-background border border-border hover:border-border/80 rounded-xl px-3 py-1.5 pr-8 outline-none focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer font-semibold text-foreground"
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value="all">All</option>
-                    </select>
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <svg
-                        width="10"
-                        height="6"
-                        viewBox="0 0 10 6"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M1 1L5 5L9 1"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <span>entries</span>
-                </div>
-
-                {/* Right: Page navigation */}
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-muted-foreground hidden md:inline-block font-medium">
-                    Showing {totalItems === 0 ? 0 : startIndex + 1} to{" "}
-                    {endIndex} of {totalItems}
-                  </span>
-
-                  {!isAll && totalPages > 1 && (
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="w-8 h-8 rounded-lg border-border hover:bg-muted"
-                        disabled={currentPage === 1}
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(1, p - 1))
-                        }
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
-
-                      <div className="flex items-center px-3 font-semibold text-foreground bg-muted/50 h-8 rounded-lg">
-                        {currentPage}{" "}
-                        <span className="text-muted-foreground font-normal mx-1">
-                          /
-                        </span>{" "}
-                        {totalPages}
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="w-8 h-8 rounded-lg border-border hover:bg-muted"
-                        disabled={currentPage === totalPages}
-                        onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages, p + 1))
-                        }
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <Pagination
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(val) => {
+                setItemsPerPage(val);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         )}
       </div>

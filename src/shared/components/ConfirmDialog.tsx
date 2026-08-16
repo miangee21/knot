@@ -49,7 +49,7 @@ export function ConfirmDialog({
               onConfirm();
               onClose();
             }}
-            className="rounded-full px-5 bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20 border-none"
+            className="rounded-full px-5 bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-md shadow-destructive/20 border-none"
           >
             {confirmText}
           </Button>

@@ -2,12 +2,13 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Tag, Loader2, Search, XCircle } from "lucide-react";
+import { Plus, Tag, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { CategoryList } from "@/features/categories/components/CategoryList";
 import { CategoryFormDialog } from "@/features/categories/components/CategoryFormDialog";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { SearchBar } from "@/shared/components/SearchBar";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { CategoryFormData } from "@/features/categories/types";
 import { CategoryDoc } from "@/features/categories/components/CategoryCard";
@@ -101,16 +102,12 @@ export default function CategoriesPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           {/* Only show search bar if there is at least one category to search through */}
           {categories && categories.length > 0 && (
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search categories..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-11 bg-card border border-border/60 hover:border-border focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-full pl-10 pr-4 text-sm font-medium outline-none transition-all shadow-sm placeholder:text-muted-foreground/60"
-              />
-            </div>
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search categories..."
+              className="sm:w-64"
+            />
           )}
 
           <Button

@@ -64,7 +64,7 @@ export function CategoryCard({
           <DropdownMenuSeparator className="bg-border h-px my-1 mx-1" />
           <DropdownMenuItem
             onClick={() => onDelete(category._id)}
-            className="rounded-xl cursor-pointer py-1.5 px-3 text-sm font-semibold text-red-600 focus:bg-red-500/10"
+            className="rounded-xl cursor-pointer py-1.5 px-3 text-sm font-semibold text-destructive focus:text-destructive focus:bg-destructive/10"
           >
             <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
           </DropdownMenuItem>

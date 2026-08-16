@@ -125,7 +125,7 @@ export function LocationListRow({
 
             <DropdownMenuItem
               onClick={() => onDelete(location._id)}
-              className="rounded-xl cursor-pointer py-2 px-3 font-semibold text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 focus:bg-red-500/10"
+              className="rounded-xl cursor-pointer py-2 px-3 font-semibold text-destructive focus:text-destructive focus:bg-destructive/10"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               <span>Delete</span>

@@ -144,7 +144,7 @@ export function LocationFormDialog({
                     <div
                       key={kind}
                       onClick={() => !isLoading && setValue("kind", kind)}
-                      className={`flex items-center justify-center h-10 rounded-2xl text-xs font-bold uppercase cursor-pointer border ${currentKind === kind ? "bg-primary text-white border-primary shadow-md" : "bg-background border-border/50 text-muted-foreground hover:bg-muted"}`}
+                      className={`flex items-center justify-center h-10 rounded-2xl text-xs font-bold uppercase cursor-pointer border ${currentKind === kind ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border/50 text-muted-foreground hover:bg-muted"}`}
                     >
                       {kind}
                     </div>
