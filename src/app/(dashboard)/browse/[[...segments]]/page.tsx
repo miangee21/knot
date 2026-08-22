@@ -2,28 +2,33 @@
 "use client";
 
 import * as React from "react";
-import {
-  Folder,
-  Plus,
-  ChevronRight,
-  Home,
-  PackageOpen,
-  MoreVertical,
-  Edit2,
-  Trash2,
-} from "lucide-react";
+import { useParams } from "next/navigation";
+import { Plus, PackageOpen } from "lucide-react";
+
+// Shared Components
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
-import {
-  ItemFormDialog,
-  ItemFormData,
-} from "@/features/items/components/form/ItemFormDialog";
+import { SearchBar } from "@/shared/components/SearchBar";
+import { Pagination } from "@/shared/components/Pagination";
 
+// Form & Types
+import { ItemFormDialog } from "@/features/items/components/form/ItemFormDialog";
+import { ItemFormData } from "@/features/items/types";
+
+// Browser UI Components
+import { ItemBreadcrumb } from "@/features/items/components/browser/ItemBreadcrumb";
+import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
+import { ItemListTable } from "@/features/items/components/browser/ItemListTable";
+import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
+
+// Hooks
 import { useItemChildren } from "@/features/items/hooks/useItemChildren";
+import { useItemAncestors } from "@/features/items/hooks/useItemAncestors";
 import { useCreateItem } from "@/features/items/hooks/useCreateItem";
 import { useUpdateItem } from "@/features/items/hooks/useUpdateItem";
 import { useDeleteItem } from "@/features/items/hooks/useDeleteItem";
+import { useViewPreference } from "@/features/items/hooks/useViewPreference";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useLocations } from "@/features/locations/hooks/useLocations";
@@ -31,30 +36,25 @@ import { Id } from "../../../../../convex/_generated/dataModel";
 import { api } from "../../../../../convex/_generated/api";
 import { useAction } from "convex/react";
 import { uploadImageToCloudinary } from "../../../../features/items/utils/cloudinary";
-import { SearchBar } from "@/shared/components/SearchBar";
-import { Pagination } from "@/shared/components/Pagination";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
-
-interface BreadcrumbNode {
-  id: Id<"items"> | null;
-  name: string;
-}
 
 export default function BrowsePage() {
-  // Navigation & Tree State
-  const [currentParentId, setCurrentParentId] =
-    React.useState<Id<"items"> | null>(null);
-  const [breadcrumbs, setBreadcrumbs] = React.useState<BreadcrumbNode[]>([
-    { id: null, name: "Home" },
-  ]);
+  // Navigation & Route State
+  const params = useParams();
+  const segments = params.segments as string[] | undefined;
+
+  // Get currentParentId from the last segment in the URL
+  const currentParentId = (
+    segments && segments.length > 0 ? segments[segments.length - 1] : null
+  ) as Id<"items"> | null;
+  const currentPath = segments ? `/browse/${segments.join("/")}` : "/browse";
+
+  // View Preference (Grid vs List)
+  const { viewMode, setViewMode } = useViewPreference();
 
   // Data Hooks
+  const { ancestors, isLoading: ancestorsLoading } = useItemAncestors(
+    currentParentId ?? undefined,
+  );
   const { children: items, isLoading: itemsLoading } =
     useItemChildren(currentParentId);
   const { categories } = useCategories();
@@ -100,31 +100,15 @@ export default function BrowsePage() {
   }, [searchTerm]);
 
   // Handlers
-  const navigateTo = (item: any) => {
-    setCurrentParentId(item._id);
-    setBreadcrumbs((prev) => [...prev, { id: item._id, name: item.name }]);
-  };
-
-  const navigateToBreadcrumb = (index: number) => {
-    const node = breadcrumbs[index];
-    setCurrentParentId(node.id);
-    setBreadcrumbs((prev) => prev.slice(0, index + 1));
-  };
-
   const openNewDialog = () => {
     setEditingItem(null);
     setIsFormOpen(true);
   };
 
-  const openEditDialog = (e: React.MouseEvent, item: any) => {
-    e.stopPropagation();
-    setEditingItem(item);
-    setIsFormOpen(true);
-  };
-
-  const confirmDelete = (e: React.MouseEvent, item: any) => {
-    e.stopPropagation();
-    setItemToDelete(item);
+  const handleItemClick = (item: any) => {
+    // NOTE: Step 14 mein yahan ItemDetailSheet khulegi.
+    // Abhi hum sirf log kar rahe hain, action nahi hoga taake app clean rahay.
+    console.log("Detail sheet will open for:", item.name);
   };
 
   const onFormSubmit = async (data: ItemFormData) => {
@@ -132,7 +116,6 @@ export default function BrowsePage() {
     try {
       let posterUrl = data.poster;
 
-      // If user selected a new file, upload to Cloudinary first
       if (data.poster instanceof File) {
         const uploadResult = await uploadImageToCloudinary(data.poster, () =>
           generateSignature(),
@@ -140,7 +123,6 @@ export default function BrowsePage() {
         posterUrl = uploadResult.url;
       }
 
-      // Prepare final payload for Convex
       const payload = {
         ...data,
         poster: typeof posterUrl === "string" ? posterUrl : undefined,
@@ -162,7 +144,6 @@ export default function BrowsePage() {
   const onConfirmDelete = async () => {
     if (!itemToDelete) return;
     try {
-      // NOTE: Here you would also call your Cloudinary delete API if itemToDelete.poster exists
       await handleDelete(itemToDelete._id);
       setItemToDelete(null);
     } catch (error) {
@@ -172,40 +153,15 @@ export default function BrowsePage() {
 
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">
-      {/* Header & Breadcrumbs */}
+      {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/50 pb-4">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Browse
           </h1>
 
-          {/* Breadcrumb Navigation */}
-          <div className="flex items-center flex-wrap gap-1.5 text-sm font-medium">
-            {breadcrumbs.map((crumb, index) => {
-              const isLast = index === breadcrumbs.length - 1;
-              return (
-                <div
-                  key={crumb.id || "root"}
-                  className="flex items-center gap-1.5"
-                >
-                  <button
-                    onClick={() => navigateToBreadcrumb(index)}
-                    className={`flex items-center transition-colors hover:text-primary ${
-                      isLast
-                        ? "text-foreground font-bold"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {index === 0 ? <Home className="w-4 h-4 mr-1" /> : null}
-                    {crumb.name}
-                  </button>
-                  {!isLast && (
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {/* Dynamic Breadcrumbs Component */}
+          {!ancestorsLoading && <ItemBreadcrumb ancestors={ancestors} />}
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
@@ -217,6 +173,8 @@ export default function BrowsePage() {
               className="w-full sm:w-56"
             />
           )}
+          {/* Grid vs List Toggle */}
+          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
           <Button
             onClick={openNewDialog}
             className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:-translate-y-px transition-all h-11 px-6 w-full sm:w-auto shrink-0"
@@ -228,7 +186,7 @@ export default function BrowsePage() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col space-y-2">
-        {itemsLoading ? (
+        {itemsLoading || ancestorsLoading ? (
           <div className="flex items-center justify-center min-h-[40vh]">
             <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           </div>
@@ -254,69 +212,52 @@ export default function BrowsePage() {
           />
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {/* Yahan par ab items ki jagah currentItems map hoga */}
-              {currentItems.map((item) => (
-                <div
-                  key={item._id}
-                  onClick={() => navigateTo(item)}
-                  className="group relative flex flex-col justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-(--shadow-premium) hover:shadow-(--shadow-premium-hover) dark:bg-[hsl(var(--card-elevated))] hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer h-32"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 shrink-0 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                        <Folder className="w-5 h-5 fill-primary/20" />
-                      </div>
-                      <h3 className="font-bold text-foreground truncate max-w-40">
-                        {item.name}
-                      </h3>
-                    </div>
-
-                    {/* Action Menu */}
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="p-2 -mr-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors outline-none border-none bg-transparent">
-                          <MoreVertical className="w-4 h-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-36 rounded-2xl p-1.5 border-border bg-card shadow-(--shadow-dropdown)"
-                        >
-                          <DropdownMenuItem
-                            onClick={(e) => openEditDialog(e, item)}
-                            className="rounded-xl cursor-pointer py-1.5 px-3 text-sm font-semibold hover:bg-muted"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 mr-2 text-muted-foreground" />{" "}
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-border h-px my-1 mx-1" />
-                          <DropdownMenuItem
-                            onClick={(e) => confirmDelete(e, item)}
-                            className="rounded-xl cursor-pointer py-1.5 px-3 text-sm font-semibold text-destructive focus:bg-destructive/10 focus:text-destructive"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination Component */}
-            <div className="mt-2">
-              <Pagination
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={(val) => {
-                  setItemsPerPage(val);
-                  setCurrentPage(1);
+            {/* Dynamic Rendering based on ViewMode */}
+            {viewMode === "grid" ? (
+              <ItemGrid
+                items={currentItems}
+                currentPath={currentPath}
+                allLocations={locations || []}
+                onDetailsClick={handleItemClick}
+                onEditClick={(item) => {
+                  setEditingItem(item);
+                  setIsFormOpen(true);
+                }}
+                onDeleteClick={(item) => {
+                  setItemToDelete(item);
                 }}
               />
-            </div>
+            ) : (
+              <ItemListTable
+                items={currentItems}
+                currentPath={currentPath}
+                allLocations={locations || []}
+                onDetailsClick={handleItemClick}
+                onEditClick={(item) => {
+                  setEditingItem(item);
+                  setIsFormOpen(true);
+                }}
+                onDeleteClick={(item) => {
+                  setItemToDelete(item);
+                }}
+              />
+            )}
+
+            {/* Pagination Component */}
+            {totalItems > 0 && (
+              <div className="mt-2">
+                <Pagination
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  currentPage={currentPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={(val) => {
+                    setItemsPerPage(val);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

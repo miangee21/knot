@@ -3,7 +3,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, ChevronDown, ShieldCheck } from "lucide-react";
+import { LogOut, ChevronDown, ShieldCheck, Settings } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/components/ui/popover";
+import { Switch } from "@/shared/components/ui/switch";
+import { useEditMode } from "@/shared/store/useEditMode";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
@@ -28,6 +35,7 @@ export function Navbar() {
   const user = useQuery(api.users.getCurrentUser);
   const initials = user?.name ? user.name.charAt(0).toUpperCase() : "U";
   const { isAdmin } = useIsAdmin();
+  const { isEditMode, toggleEditMode } = useEditMode();
 
   const navLinks = [
     { name: "Locations", path: "/locations" },
@@ -86,6 +94,31 @@ export function Navbar() {
 
         {/* Right: Theme Toggle & User Avatar Dropdown */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Action Settings Toggle */}
+          <Popover>
+            <PopoverTrigger className="outline-none">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer">
+                <Settings className="h-4.5 w-4.5" />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-64 rounded-2xl border-border bg-card shadow-[var(--shadow-dropdown)] p-3"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-sm font-semibold text-foreground">
+                    Action buttons
+                  </p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Show on Card and Rows
+                  </p>
+                </div>
+                <Switch checked={isEditMode} onCheckedChange={toggleEditMode} />
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <ThemeToggle />
 
           <DropdownMenu>

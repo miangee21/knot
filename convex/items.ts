@@ -14,6 +14,7 @@ export const create = mutation({
     sizeBytes: v.optional(v.union(v.number(), v.null())),
     categoryId: v.optional(v.union(v.id("categories"), v.null())),
     locationIds: v.array(v.id("locations")),
+    isFolder: v.optional(v.boolean()),
     poster: v.optional(v.union(v.string(), v.null())), // Stores Cloudinary public_id or URL
     notes: v.optional(v.union(v.string(), v.null())),
   },
@@ -30,6 +31,7 @@ export const create = mutation({
       sizeBytes: args.sizeBytes ?? undefined,
       categoryId: args.categoryId ?? undefined,
       locationIds: args.locationIds,
+      isFolder: args.isFolder ?? false,
       poster: args.poster ?? undefined,
       notes: args.notes ?? undefined,
     });
@@ -47,6 +49,7 @@ export const update = mutation({
     sizeBytes: v.optional(v.union(v.number(), v.null())),
     categoryId: v.optional(v.union(v.id("categories"), v.null())),
     locationIds: v.array(v.id("locations")),
+    isFolder: v.optional(v.boolean()),
     poster: v.optional(v.union(v.string(), v.null())),
     notes: v.optional(v.union(v.string(), v.null())),
   },
@@ -67,6 +70,7 @@ export const update = mutation({
       sizeBytes: args.sizeBytes ?? undefined,
       categoryId: args.categoryId ?? undefined,
       locationIds: args.locationIds,
+      isFolder: args.isFolder ?? false,
       poster: args.poster ?? undefined,
       notes: args.notes ?? undefined,
     });

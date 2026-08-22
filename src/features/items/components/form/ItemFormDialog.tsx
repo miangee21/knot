@@ -4,8 +4,7 @@
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, Check, ChevronsUpDown, Folder, FileText } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 import {
@@ -32,23 +31,12 @@ import { RangeInput } from "./RangeInput";
 import { SizeInput } from "./SizeInput";
 import { LocationMultiSelect } from "./LocationMultiSelect";
 import { PosterUploadField } from "./PosterUploadField";
+import { Switch } from "@/shared/components/ui/switch";
 
 import { CategoryDoc } from "@/features/categories/components/CategoryCard";
 import { LocationDoc } from "@/features/locations/components/LocationCard";
 
-const itemFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  parentId: z.string().optional().nullable(),
-  start: z.number().optional().nullable(),
-  end: z.number().optional().nullable(),
-  sizeBytes: z.number().optional().nullable(),
-  categoryId: z.string().optional().nullable(),
-  locationIds: z.array(z.string()),
-  poster: z.any().optional().nullable(),
-  notes: z.string().optional().nullable(),
-});
-
-export type ItemFormData = z.infer<typeof itemFormSchema>;
+import { itemFormSchema, ItemFormData } from "../../types";
 
 function CategorySelect({
   categories,
@@ -162,6 +150,7 @@ export function ItemFormDialog({
       name: "",
       parentId: defaultParentId || null,
       locationIds: [],
+      isFolder: false,
       notes: "",
     },
   });
@@ -176,6 +165,7 @@ export function ItemFormDialog({
         sizeBytes: initialData?.sizeBytes,
         categoryId: initialData?.categoryId || null,
         locationIds: initialData?.locationIds || [],
+        isFolder: initialData?.isFolder || false,
         poster: initialData?.poster || null,
         notes: initialData?.notes || "",
       });
@@ -188,10 +178,27 @@ export function ItemFormDialog({
       onOpenChange={(open) => !open && !isLoading && onClose()}
     >
       <DialogContent className="max-w-[95vw] md:max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar rounded-4xl bg-card border-border/80 shadow-2xl p-6 sm:p-8">
-        <DialogHeader className="mb-4">
+        <DialogHeader className="mb-4 flex flex-row items-center justify-between space-y-0">
           <DialogTitle className="text-2xl font-bold tracking-tight">
             {initialData?.name ? "Edit Item" : "Create New Item"}
           </DialogTitle>
+          
+          {/* Compact File/Folder Toggle */}
+          <Controller
+            control={control}
+            name="isFolder"
+            render={({ field }) => (
+              <div className="flex items-center gap-2.5 bg-muted/40 px-3 py-1.5 rounded-full border border-border/80">
+                <FileText className={cn("w-4 h-4 transition-colors", !field.value ? "text-primary" : "text-muted-foreground")} />
+                <Switch 
+                  checked={field.value} 
+                  onCheckedChange={field.onChange} 
+                  className="scale-90"
+                />
+                <Folder className={cn("w-4 h-4 transition-colors", field.value ? "text-primary fill-primary/20" : "text-muted-foreground")} />
+              </div>
+            )}
+          />
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
