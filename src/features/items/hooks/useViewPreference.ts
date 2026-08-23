@@ -10,7 +10,7 @@ export function useViewPreference() {
 
   // Load from local storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("cinevault-view-mode") as ViewMode;
+    const saved = localStorage.getItem("knot-view-mode") as ViewMode;
     if (saved === "grid" || saved === "list") {
       setViewMode(saved);
     }

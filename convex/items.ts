@@ -273,3 +273,17 @@ export const getGlobalCounts = query({
     return { categoryCounts, locationCounts };
   },
 });
+
+// 11. Get all items flat for Risk Analysis
+export const getAllItemsFlat = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    return await ctx.db
+      .query("items")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+  },
+});
