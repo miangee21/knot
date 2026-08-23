@@ -1,27 +1,23 @@
 //src/app/(dashboard)/browse/[[...segments]]/page.tsx
 "use client";
-
 import * as React from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Plus, PackageOpen } from "lucide-react";
-
 // Shared Components
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { SearchBar } from "@/shared/components/SearchBar";
 import { Pagination } from "@/shared/components/Pagination";
-
 // Form & Types
 import { ItemFormDialog } from "@/features/items/components/form/ItemFormDialog";
 import { ItemFormData } from "@/features/items/types";
-
 // Browser UI Components
 import { ItemBreadcrumb } from "@/features/items/components/browser/ItemBreadcrumb";
 import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
 import { ItemListTable } from "@/features/items/components/browser/ItemListTable";
 import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
-
+import { ItemDetailSheet } from "@/features/items/components/detail/ItemDetailSheet";
 // Hooks
 import { useItemChildren } from "@/features/items/hooks/useItemChildren";
 import { useItemAncestors } from "@/features/items/hooks/useItemAncestors";
@@ -29,7 +25,6 @@ import { useCreateItem } from "@/features/items/hooks/useCreateItem";
 import { useUpdateItem } from "@/features/items/hooks/useUpdateItem";
 import { useDeleteItem } from "@/features/items/hooks/useDeleteItem";
 import { useViewPreference } from "@/features/items/hooks/useViewPreference";
-
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { Id } from "../../../../../convex/_generated/dataModel";
@@ -40,6 +35,7 @@ import { uploadImageToCloudinary } from "../../../../features/items/utils/cloudi
 export default function BrowsePage() {
   // Navigation & Route State
   const params = useParams();
+  const router = useRouter();
   const segments = params.segments as string[] | undefined;
 
   // Get currentParentId from the last segment in the URL
@@ -70,6 +66,7 @@ export default function BrowsePage() {
   const [editingItem, setEditingItem] = React.useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState<any | null>(null);
+  const [detailItem, setDetailItem] = React.useState<any | null>(null);
 
   // Search & Pagination State
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -106,9 +103,7 @@ export default function BrowsePage() {
   };
 
   const handleItemClick = (item: any) => {
-    // NOTE: Step 14 mein yahan ItemDetailSheet khulegi.
-    // Abhi hum sirf log kar rahe hain, action nahi hoga taake app clean rahay.
-    console.log("Detail sheet will open for:", item.name);
+    setDetailItem(item);
   };
 
   const onFormSubmit = async (data: ItemFormData) => {
@@ -245,7 +240,6 @@ export default function BrowsePage() {
                 }}
               />
             )}
-
             {/* Pagination Component */}
             {totalItems > 0 && (
               <div className="mt-2">
@@ -264,7 +258,6 @@ export default function BrowsePage() {
           </>
         )}
       </div>
-
       {/* Item Form Dialog */}
       <ItemFormDialog
         isOpen={isFormOpen}
@@ -276,7 +269,6 @@ export default function BrowsePage() {
         locations={locations || []}
         isLoading={isSubmitting}
       />
-
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={!!itemToDelete}
@@ -284,6 +276,15 @@ export default function BrowsePage() {
         onConfirm={onConfirmDelete}
         title="Delete Item"
         description="Are you sure you want to delete this item? If this is a folder, ALL items inside it will also be deleted forever."
+      />
+      {/* Item Detail Side Sheet */}
+      <ItemDetailSheet
+        item={detailItem}
+        isOpen={!!detailItem}
+        onClose={() => setDetailItem(null)}
+        allLocations={locations || []}
+        categories={categories || []}
+        ancestors={ancestors}
       />
     </div>
   );
