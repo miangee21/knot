@@ -35,6 +35,7 @@ interface ItemListRowProps {
   onDetailsClick: (item: any) => void;
   onEditClick: (item: any) => void;
   onDeleteClick: (item: any) => void;
+  onMoveClick: (item: any) => void;
 }
 
 export function ItemListRow({
@@ -46,6 +47,7 @@ export function ItemListRow({
   onDetailsClick,
   onEditClick,
   onDeleteClick,
+  onMoveClick,
 }: ItemListRowProps) {
   const isFolder = item.isFolder;
   const href = `${currentPath}/${item._id}`;
@@ -123,6 +125,7 @@ export function ItemListRow({
         onDetailsClick={onDetailsClick}
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
+        onMoveClick={onMoveClick}
       />
     </div>
   );

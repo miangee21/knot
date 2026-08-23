@@ -10,6 +10,7 @@ interface ItemGridProps {
   onDetailsClick: (item: any) => void;
   onEditClick: (item: any) => void;
   onDeleteClick: (item: any) => void;
+  onMoveClick: (item: any) => void;
 }
 
 export function ItemGrid({
@@ -19,6 +20,7 @@ export function ItemGrid({
   onDetailsClick,
   onEditClick,
   onDeleteClick,
+  onMoveClick,
 }: ItemGridProps) {
   if (items.length === 0) return null;
 
@@ -33,6 +35,7 @@ export function ItemGrid({
           onDetailsClick={onDetailsClick}
           onEditClick={onEditClick}
           onDeleteClick={onDeleteClick}
+          onMoveClick={onMoveClick}
         />
       ))}
     </div>

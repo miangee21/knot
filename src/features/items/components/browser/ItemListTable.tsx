@@ -11,6 +11,7 @@ interface ItemListTableProps {
   onDetailsClick: (item: any) => void;
   onEditClick: (item: any) => void;
   onDeleteClick: (item: any) => void;
+  onMoveClick: (item: any) => void;
 }
 
 type ColumnWidths = {
@@ -27,6 +28,7 @@ export function ItemListTable({
   onDetailsClick,
   onEditClick,
   onDeleteClick,
+  onMoveClick,
 }: ItemListTableProps) {
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>({
     name: 1.5,
@@ -111,6 +113,7 @@ export function ItemListTable({
           onDetailsClick={onDetailsClick}
           onEditClick={onEditClick}
           onDeleteClick={onDeleteClick}
+          onMoveClick={onMoveClick}
         />
       ))}
     </div>

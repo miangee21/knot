@@ -103,7 +103,7 @@ export function Navbar() {
             </PopoverTrigger>
             <PopoverContent
               align="end"
-              className="w-64 rounded-2xl border-border bg-card shadow-[var(--shadow-dropdown)] p-3"
+              className="w-64 rounded-2xl border-border bg-card shadow-(--shadow-dropdown) p-3"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-0.5">

@@ -18,6 +18,7 @@ import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
 import { ItemListTable } from "@/features/items/components/browser/ItemListTable";
 import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
 import { ItemDetailSheet } from "@/features/items/components/detail/ItemDetailSheet";
+import { MoveItemDialog } from "@/features/items/components/browser/MoveItemDialog";
 // Hooks
 import { useItemChildren } from "@/features/items/hooks/useItemChildren";
 import { useItemAncestors } from "@/features/items/hooks/useItemAncestors";
@@ -67,6 +68,7 @@ export default function BrowsePage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState<any | null>(null);
   const [detailItem, setDetailItem] = React.useState<any | null>(null);
+  const [movingItem, setMovingItem] = React.useState<any | null>(null);
 
   // Search & Pagination State
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -230,6 +232,7 @@ export default function BrowsePage() {
                 onDeleteClick={(item) => {
                   setItemToDelete(item);
                 }}
+                onMoveClick={(item) => setMovingItem(item)}
               />
             ) : (
               <ItemListTable
@@ -244,6 +247,7 @@ export default function BrowsePage() {
                 onDeleteClick={(item) => {
                   setItemToDelete(item);
                 }}
+                onMoveClick={(item) => setMovingItem(item)}
               />
             )}
             {/* Pagination Component */}
@@ -283,6 +287,14 @@ export default function BrowsePage() {
         title="Delete Item"
         description="Are you sure you want to delete this item? If this is a folder, ALL items inside it will also be deleted forever."
       />
+
+      {/* Move Item Dialog */}
+      <MoveItemDialog
+        item={movingItem}
+        isOpen={!!movingItem}
+        onClose={() => setMovingItem(null)}
+      />
+
       {/* Item Detail Side Sheet */}
       <ItemDetailSheet
         item={detailItem}

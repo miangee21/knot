@@ -1,7 +1,14 @@
 //src/features/items/components/browser/ItemListRowActions.tsx
 "use client";
 
-import { MoreVertical, Edit2, Trash2, Info, ChevronRight } from "lucide-react";
+import {
+  MoreVertical,
+  Edit2,
+  Trash2,
+  Info,
+  ChevronRight,
+  Folder,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +23,7 @@ interface ItemListRowActionsProps {
   onDetailsClick: (item: any) => void;
   onEditClick: (item: any) => void;
   onDeleteClick: (item: any) => void;
+  onMoveClick: (item: any) => void;
 }
 
 export function ItemListRowActions({
@@ -24,6 +32,7 @@ export function ItemListRowActions({
   onDetailsClick,
   onEditClick,
   onDeleteClick,
+  onMoveClick,
 }: ItemListRowActionsProps) {
   if (isEditMode) {
     return (
@@ -40,7 +49,7 @@ export function ItemListRowActions({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-40 rounded-xl border-border bg-card p-1.5 shadow-[var(--shadow-dropdown)]"
+            className="w-40 rounded-xl border-border bg-card p-1.5 shadow-(--shadow-dropdown)"
           >
             <DropdownMenuItem
               onClick={() => onDetailsClick(item)}
@@ -55,6 +64,14 @@ export function ItemListRowActions({
             >
               <Edit2 className="mr-2.5 h-4 w-4 text-muted-foreground" />
               Edit
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => onMoveClick(item)}
+              className="cursor-pointer rounded-lg px-2.5 py-2 font-medium hover:bg-muted"
+            >
+              <Folder className="mr-2.5 h-4 w-4 text-muted-foreground" />
+              Move
             </DropdownMenuItem>
             <DropdownMenuSeparator className="my-1 bg-border/60" />
             <DropdownMenuItem

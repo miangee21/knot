@@ -61,13 +61,13 @@ export function NameCell({
             <TooltipTrigger className="min-w-0 cursor-default truncate text-left text-[13px] font-semibold leading-5 text-foreground outline-none transition-colors duration-200 group-hover:text-primary">
               {item.name}
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs break-words text-xs font-semibold">
+            <TooltipContent className="max-w-xs wrap-break-word text-xs font-semibold">
               {item.name}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
         {item.isFolder && (
-          <span className="hidden shrink-0 rounded-md border border-primary/10 bg-primary/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary/70 sm:inline-flex">
+          <span className="hidden shrink-0 rounded-md border border-primary/10 bg-primary/6 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary/70 sm:inline-flex">
             Folder
           </span>
         )}

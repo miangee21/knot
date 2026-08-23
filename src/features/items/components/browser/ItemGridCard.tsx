@@ -10,6 +10,7 @@ import {
   Edit2,
   Trash2,
   Info,
+  Folder,
 } from "lucide-react";
 import { ItemThumbnail } from "./ItemThumbnail";
 
@@ -38,6 +39,7 @@ interface ItemGridCardProps {
   onDetailsClick: (item: any) => void;
   onEditClick: (item: any) => void;
   onDeleteClick: (item: any) => void;
+  onMoveClick: (item: any) => void;
 }
 
 export function ItemGridCard({
@@ -47,6 +49,7 @@ export function ItemGridCard({
   onDetailsClick,
   onEditClick,
   onDeleteClick,
+  onMoveClick,
 }: ItemGridCardProps) {
   const isFolder = item.isFolder;
   const href = `${currentPath}/${item._id}`;
@@ -71,10 +74,10 @@ export function ItemGridCard({
       )}
     >
       {/* Visual Area */}
-      <div className="relative aspect-[3/4] w-full shrink-0 overflow-hidden rounded-xl bg-muted/40 ring-1 ring-inset ring-border/30">
+      <div className="relative aspect-3/4 w-full shrink-0 overflow-hidden rounded-xl bg-muted/40 ring-1 ring-inset ring-border/30">
         <div
           className={cn(
-            "pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/10 via-transparent to-white/5 opacity-0 transition-opacity duration-300",
+            "pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-black/10 via-transparent to-white/5 opacity-0 transition-opacity duration-300",
             !isEditMode && "group-hover:opacity-100",
           )}
         />
@@ -103,7 +106,7 @@ export function ItemGridCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-40 rounded-xl border-border bg-card shadow-[var(--shadow-dropdown)] p-1.5"
+                className="w-40 rounded-xl border-border bg-card shadow-(--shadow-dropdown) p-1.5"
               >
                 <DropdownMenuItem
                   onClick={() => onDetailsClick(item)}
@@ -119,6 +122,14 @@ export function ItemGridCard({
                 >
                   <Edit2 className="w-4 h-4 mr-2.5 text-muted-foreground" />{" "}
                   Edit
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => onMoveClick(item)}
+                  className="rounded-lg cursor-pointer py-2 px-2.5 font-medium hover:bg-muted"
+                >
+                  <Folder className="w-4 h-4 mr-2.5 text-muted-foreground" />{" "}
+                  Move
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="my-1 bg-border/60" />
@@ -144,7 +155,7 @@ export function ItemGridCard({
             <TooltipTrigger className="truncate text-[13px] font-semibold leading-5 text-foreground transition-colors group-hover:text-primary outline-none cursor-default text-left">
               {item.name}
             </TooltipTrigger>
-            <TooltipContent className="font-semibold text-xs max-w-xs break-words">
+            <TooltipContent className="font-semibold text-xs max-w-xs wrap-break-word">
               {item.name}
             </TooltipContent>
           </Tooltip>
@@ -152,7 +163,7 @@ export function ItemGridCard({
 
         {/* Metadata with TooltipProvider */}
         <TooltipProvider delay={200}>
-          <div className="mt-1.5 flex min-h-[18px] items-center gap-1.5 overflow-hidden">
+          <div className="mt-1.5 flex min-h-4.5 items-center gap-1.5 overflow-hidden">
             {rangeString && (
               <Tooltip>
                 <TooltipTrigger className="flex min-w-0 items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground outline-none">
@@ -203,7 +214,6 @@ export function ItemGridCard({
     );
   }
 
-  // If File -> Click does nothing right now (Detail Sheet will be built in Step 14)
   return (
     <div className="block h-full outline-none cursor-default">
       <CardContent />
