@@ -58,16 +58,11 @@ export function NameCell({
       <div className="flex min-w-0 items-center gap-2">
         <TooltipProvider delay={200}>
           <Tooltip>
-            <TooltipTrigger className="flex min-w-0 flex-col items-start cursor-default truncate text-left text-[13px] font-semibold leading-5 text-foreground outline-none transition-colors duration-200 group-hover:text-primary">
-              <span className="truncate w-full">{item.name}</span>
-              {item.riskPath && (
-                <span className="truncate w-full text-[9px] font-medium text-destructive/80 mt-0.5">
-                  {item.riskPath}
-                </span>
-              )}
+            <TooltipTrigger className="min-w-0 cursor-default truncate text-left text-[13px] font-semibold leading-5 text-foreground outline-none transition-colors duration-200 group-hover:text-primary">
+              {item.name}
             </TooltipTrigger>
             <TooltipContent className="max-w-xs wrap-break-word text-xs font-semibold">
-              {item.riskPath ? item.riskPath : item.name}
+              {item.name}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

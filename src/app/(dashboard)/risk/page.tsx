@@ -17,6 +17,7 @@ import { useRiskAnalysis } from "@/features/risk/hooks/useRiskAnalysis";
 import { useViewPreference } from "@/features/items/hooks/useViewPreference";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useLocations } from "@/features/locations/hooks/useLocations";
+import { useItemAncestors } from "@/features/items/hooks/useItemAncestors";
 
 export default function RiskPage() {
   const { riskItems, isLoading } = useRiskAnalysis();
@@ -44,6 +45,9 @@ export default function RiskPage() {
   // Detail & Move Modal State
   const [detailItem, setDetailItem] = React.useState<any | null>(null);
   const [movingItem, setMovingItem] = React.useState<any | null>(null);
+
+  // Fetch ancestors dynamically for the currently selected detail item
+  const { ancestors } = useItemAncestors(detailItem?.parentId ?? undefined);
 
   // Handle Mutually Exclusive Filters
   const handleCategoryChange = (catId: string) => {
@@ -88,7 +92,7 @@ export default function RiskPage() {
       const matchesLocation =
         selectedLocations.length > 0
           ? selectedLocations.some((loc) =>
-              item.effectiveLocations.includes(loc),
+              (item.effectiveLocations as string[]).includes(loc),
             )
           : true;
 
@@ -111,15 +115,17 @@ export default function RiskPage() {
       <div className="flex flex-col gap-4 border-b border-border/50 pb-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
-              Risk Analysis
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+                Risk Analysis
+              </h1>
               {riskItems && riskItems.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-destructive/10 text-destructive text-sm font-bold tracking-wide">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 sm:mt-1.5 rounded-full bg-destructive/15 text-destructive dark:text-red-400 text-sm font-bold tracking-wide">
                   <AlertTriangle className="w-4 h-4" />
                   {riskItems.length} items with no backup
                 </span>
               )}
-            </h1>
+            </div>
             <p className="text-sm text-muted-foreground">
               Files that exist in exactly one physical or cloud location.
             </p>
@@ -245,6 +251,7 @@ export default function RiskPage() {
         onClose={() => setDetailItem(null)}
         allLocations={locations || []}
         categories={categories || []}
+        ancestors={ancestors}
       />
     </div>
   );

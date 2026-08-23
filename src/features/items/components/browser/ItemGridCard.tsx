@@ -156,16 +156,11 @@ export function ItemGridCard({
         {/* Name with Custom Tooltip */}
         <TooltipProvider delay={200}>
           <Tooltip>
-            <TooltipTrigger className="flex flex-col items-start truncate text-[13px] font-semibold leading-5 text-foreground transition-colors group-hover:text-primary outline-none cursor-default text-left">
-              <span className="truncate w-full">{item.name}</span>
-              {item.riskPath && (
-                <span className="truncate w-full text-[9px] font-medium text-destructive/80 mt-0.5">
-                  {item.riskPath}
-                </span>
-              )}
+            <TooltipTrigger className="truncate text-[13px] font-semibold leading-5 text-foreground transition-colors group-hover:text-primary outline-none cursor-default text-left">
+              {item.name}
             </TooltipTrigger>
             <TooltipContent className="font-semibold text-xs max-w-xs wrap-break-word">
-              {item.riskPath ? item.riskPath : item.name}
+              {item.name}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
