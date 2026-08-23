@@ -12,22 +12,6 @@ export function useRiskAnalysis() {
 
     const itemMap = new Map(allItems.map((i) => [i._id, i]));
 
-    // Helper: Resolve inherited locations
-    const getEffectiveLocations = (itemId: Id<"items">): string[] => {
-      const locations = new Set<string>();
-      let currentItem = itemMap.get(itemId);
-
-      while (currentItem) {
-        if (currentItem.locationIds) {
-          currentItem.locationIds.forEach((id: string) => locations.add(id));
-        }
-        currentItem = currentItem.parentId
-          ? itemMap.get(currentItem.parentId)
-          : undefined;
-      }
-      return Array.from(locations);
-    };
-
     // Helper: Build Breadcrumb Path
     const getRiskPath = (itemId: Id<"items">): string => {
       const path = [];
@@ -46,7 +30,8 @@ export function useRiskAnalysis() {
     const vulnerableItems = allItems
       .filter((item) => !item.isFolder) // Only check actual files
       .map((item) => {
-        const effectiveLocations = getEffectiveLocations(item._id);
+        // Since we explicitly set locations on creation now, we just use the item's own array!
+        const effectiveLocations = item.locationIds || [];
         return {
           ...item,
           effectiveLocations,

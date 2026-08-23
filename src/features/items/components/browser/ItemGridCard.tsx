@@ -54,6 +54,7 @@ export function ItemGridCard({
   const isFolder = item.isFolder;
   const href = `${currentPath}/${item._id}`;
   const { isEditMode } = useEditMode();
+  const isRiskPage = !!item.riskPath;
 
   const rangeString = formatRange(item.rangeStart, item.rangeEnd);
 
@@ -118,6 +119,7 @@ export function ItemGridCard({
 
                 <DropdownMenuItem
                   onClick={() => onEditClick(item)}
+                  disabled={isRiskPage}
                   className="rounded-lg cursor-pointer py-2 px-2.5 font-medium hover:bg-muted"
                 >
                   <Edit2 className="w-4 h-4 mr-2.5 text-muted-foreground" />{" "}
@@ -126,6 +128,7 @@ export function ItemGridCard({
 
                 <DropdownMenuItem
                   onClick={() => onMoveClick(item)}
+                  disabled={isRiskPage}
                   className="rounded-lg cursor-pointer py-2 px-2.5 font-medium hover:bg-muted"
                 >
                   <Folder className="w-4 h-4 mr-2.5 text-muted-foreground" />{" "}
@@ -137,6 +140,7 @@ export function ItemGridCard({
                 <DropdownMenuItem
                   variant="destructive"
                   onClick={() => onDeleteClick(item)}
+                  disabled={isRiskPage}
                   className="rounded-lg cursor-pointer py-2 px-2.5 font-medium focus:bg-destructive/10 focus:text-destructive"
                 >
                   <Trash2 className="w-4 h-4 mr-2.5" /> Delete

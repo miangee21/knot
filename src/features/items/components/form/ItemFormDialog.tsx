@@ -79,14 +79,15 @@ export function ItemFormDialog({
         end: initialData?.rangeEnd ?? initialData?.end,
         sizeBytes: initialData?.sizeBytes,
         categoryId: initialData?.categoryId || null,
-        locationIds: initialData?.locationIds || [],
+        locationIds: initialData
+          ? initialData.locationIds || []
+          : inheritedLocationIds || [],
         isFolder: initialData?.isFolder || false,
         poster: initialData?.poster || null,
         notes: initialData?.notes || "",
       });
     }
-  }, [isOpen, initialData, defaultParentId, reset]);
-
+  }, [isOpen, initialData, defaultParentId, reset, inheritedLocationIds]);
   const isEditing = !!initialData?._id || !!initialData?.name;
 
   return (
@@ -133,7 +134,6 @@ export function ItemFormDialog({
             )}
           />
         </DialogHeader>
-
         <form
           onSubmit={handleSubmit(onSubmit, (errors) => {
             if (errors.poster?.message) {

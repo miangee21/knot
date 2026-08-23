@@ -34,6 +34,8 @@ export function ItemListRowActions({
   onDeleteClick,
   onMoveClick,
 }: ItemListRowActionsProps) {
+  const isRiskPage = !!item.riskPath;
+
   if (isEditMode) {
     return (
       <div
@@ -60,6 +62,7 @@ export function ItemListRowActions({
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onEditClick(item)}
+              disabled={isRiskPage}
               className="cursor-pointer rounded-lg px-2.5 py-2 font-medium hover:bg-muted"
             >
               <Edit2 className="mr-2.5 h-4 w-4 text-muted-foreground" />
@@ -68,6 +71,7 @@ export function ItemListRowActions({
 
             <DropdownMenuItem
               onClick={() => onMoveClick(item)}
+              disabled={isRiskPage}
               className="cursor-pointer rounded-lg px-2.5 py-2 font-medium hover:bg-muted"
             >
               <Folder className="mr-2.5 h-4 w-4 text-muted-foreground" />
@@ -77,6 +81,7 @@ export function ItemListRowActions({
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDeleteClick(item)}
+              disabled={isRiskPage}
               className="cursor-pointer rounded-lg px-2.5 py-2 font-medium focus:bg-destructive/10 focus:text-destructive"
             >
               <Trash2 className="mr-2.5 h-4 w-4" />

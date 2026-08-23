@@ -57,6 +57,18 @@ export default function BrowsePage() {
   const { categories } = useCategories();
   const { locations } = useLocations();
 
+  // Compute inherited locations from ancestors for new items
+  const inheritedLocationIds = React.useMemo(() => {
+    if (!ancestors) return [];
+    const locSet = new Set<string>();
+    ancestors.forEach((anc: any) => {
+      if (anc.locationIds) {
+        anc.locationIds.forEach((id: string) => locSet.add(id));
+      }
+    });
+    return Array.from(locSet);
+  }, [ancestors]);
+
   const { handleCreate } = useCreateItem();
   const { handleUpdate } = useUpdateItem();
   const { handleDelete } = useDeleteItem();
@@ -277,6 +289,7 @@ export default function BrowsePage() {
         defaultParentId={currentParentId || undefined}
         categories={categories || []}
         locations={locations || []}
+        inheritedLocationIds={inheritedLocationIds}
         isLoading={isSubmitting}
       />
       {/* Delete Confirmation Dialog */}
