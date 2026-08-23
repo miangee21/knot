@@ -4,9 +4,8 @@
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Check, ChevronsUpDown, Folder, FileText } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-
 import {
   Dialog,
   DialogContent,
@@ -14,112 +13,21 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/shared/components/ui/command";
+import { FileText, Folder } from "lucide-react";
 import { RangeInput } from "./RangeInput";
 import { SizeInput } from "./SizeInput";
 import { LocationMultiSelect } from "./LocationMultiSelect";
 import { PosterUploadField } from "./PosterUploadField";
-import { Switch } from "@/shared/components/ui/switch";
-
+import { CategorySelect } from "./CategorySelect";
 import { CategoryDoc } from "@/features/categories/components/CategoryCard";
 import { LocationDoc } from "@/features/locations/components/LocationCard";
-
 import { itemFormSchema, ItemFormData } from "../../types";
-
-function CategorySelect({
-  categories,
-  value,
-  onChange,
-}: {
-  categories: CategoryDoc[];
-  value: string | null | undefined;
-  onChange: (val: string | null) => void;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const selectedCat = categories.find((c) => c._id === value);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        render={
-          <Button
-            variant="outline"
-            role="combobox"
-            className="w-full justify-between h-11 rounded-xl bg-background border-border/80 hover:border-primary/50 hover:bg-background font-normal px-4"
-          />
-        }
-      >
-        <span
-          className={selectedCat ? "text-foreground" : "text-muted-foreground"}
-        >
-          {selectedCat ? selectedCat.name : "Inherit or None"}
-        </span>
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </PopoverTrigger>
-      <PopoverContent className="w-full sm:w-64 p-0 rounded-2xl border-border bg-card shadow-(--shadow-dropdown)">
-        <Command>
-          <CommandInput placeholder="Search categories..." />
-          <CommandList className="custom-scrollbar">
-            <CommandEmpty>No category found.</CommandEmpty>
-            <CommandGroup>
-              <CommandItem
-                onSelect={() => {
-                  onChange(null);
-                  setOpen(false);
-                }}
-                className="cursor-pointer rounded-xl my-1 hover:bg-muted font-medium"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4 text-primary",
-                    !value ? "opacity-100" : "opacity-0",
-                  )}
-                />
-                Inherit or None
-              </CommandItem>
-              {categories.map((cat) => (
-                <CommandItem
-                  key={cat._id}
-                  onSelect={() => {
-                    onChange(cat._id);
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer rounded-xl my-1 hover:bg-muted font-medium"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 text-primary",
-                      value === cat._id ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {cat.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 interface ItemFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ItemFormData) => Promise<void>;
-  initialData?: Partial<ItemFormData> | null;
+  initialData?: any;
   defaultParentId?: string;
   categories: CategoryDoc[];
   locations: LocationDoc[];
@@ -143,6 +51,7 @@ export function ItemFormDialog({
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { errors },
   } = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
@@ -155,13 +64,19 @@ export function ItemFormDialog({
     },
   });
 
+  const watchName = watch("name");
+  const watchSize = watch("sizeBytes");
+  const watchLocations = watch("locationIds");
+  const isFormValid =
+    !!watchName && !!watchSize && (watchLocations?.length || 0) > 0;
+
   React.useEffect(() => {
     if (isOpen) {
       reset({
         name: initialData?.name || "",
         parentId: initialData?.parentId || defaultParentId || null,
-        start: initialData?.start,
-        end: initialData?.end,
+        start: initialData?.rangeStart ?? initialData?.start,
+        end: initialData?.rangeEnd ?? initialData?.end,
         sizeBytes: initialData?.sizeBytes,
         categoryId: initialData?.categoryId || null,
         locationIds: initialData?.locationIds || [],
@@ -172,6 +87,8 @@ export function ItemFormDialog({
     }
   }, [isOpen, initialData, defaultParentId, reset]);
 
+  const isEditing = !!initialData?._id || !!initialData?.name;
+
   return (
     <Dialog
       open={isOpen}
@@ -180,22 +97,38 @@ export function ItemFormDialog({
       <DialogContent className="max-w-[95vw] md:max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar rounded-4xl bg-card border-border/80 shadow-2xl p-6 sm:p-8">
         <DialogHeader className="mb-4 flex flex-row items-center justify-between space-y-0">
           <DialogTitle className="text-2xl font-bold tracking-tight">
-            {initialData?.name ? "Edit Item" : "Create New Item"}
+            {isEditing ? "Edit Item" : "Create New Item"}
           </DialogTitle>
-          
-          {/* Compact File/Folder Toggle */}
+
           <Controller
             control={control}
             name="isFolder"
             render={({ field }) => (
-              <div className="flex items-center gap-2.5 bg-muted/40 px-3 py-1.5 rounded-full border border-border/80">
-                <FileText className={cn("w-4 h-4 transition-colors", !field.value ? "text-primary" : "text-muted-foreground")} />
-                <Switch 
-                  checked={field.value} 
-                  onCheckedChange={field.onChange} 
-                  className="scale-90"
-                />
-                <Folder className={cn("w-4 h-4 transition-colors", field.value ? "text-primary fill-primary/20" : "text-muted-foreground")} />
+              <div className="flex items-center p-1 bg-muted/40 rounded-xl border border-border/60 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => field.onChange(false)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200",
+                    !field.value
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <FileText className="w-4 h-4" /> File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => field.onChange(true)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200",
+                    field.value
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <Folder className="w-4 h-4" /> Folder
+                </button>
               </div>
             )}
           />
@@ -245,7 +178,7 @@ export function ItemFormDialog({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-foreground">
-                    Size (Optional)
+                    Size <span className="text-destructive">*</span>
                   </label>
                   <Controller
                     control={control}
@@ -277,24 +210,29 @@ export function ItemFormDialog({
                 </div>
               </div>
 
-              <Controller
-                control={control}
-                name="locationIds"
-                render={({ field }) => (
-                  <LocationMultiSelect
-                    allLocations={locations}
-                    selectedIds={field.value}
-                    onChange={field.onChange}
-                    inheritedIds={inheritedLocationIds}
-                  />
-                )}
-              />
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground">
+                  Locations <span className="text-destructive">*</span>
+                </label>
+                <Controller
+                  control={control}
+                  name="locationIds"
+                  render={({ field }) => (
+                    <LocationMultiSelect
+                      allLocations={locations}
+                      selectedIds={field.value}
+                      onChange={field.onChange}
+                      inheritedIds={inheritedLocationIds}
+                    />
+                  )}
+                />
+              </div>
             </div>
 
             <div className="md:col-span-5 flex flex-col gap-5">
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-foreground">
-                  Poster
+                  Poster (Optional)
                 </label>
                 <Controller
                   control={control}
@@ -311,7 +249,7 @@ export function ItemFormDialog({
 
               <div className="space-y-1.5 flex-1 flex flex-col">
                 <label className="text-sm font-semibold text-foreground">
-                  Notes
+                  Notes (Optional)
                 </label>
                 <textarea
                   {...register("notes")}
@@ -334,16 +272,17 @@ export function ItemFormDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !isFormValid}
               className="rounded-full px-8 h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-px"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
                 </>
+              ) : isEditing ? (
+                "Save Changes"
               ) : (
-                "Save Item"
+                "Create"
               )}
             </Button>
           </div>

@@ -115,17 +115,20 @@ export default function BrowsePage() {
     setIsSubmitting(true);
     try {
       let posterUrl = data.poster;
+      let posterPublicId = undefined;
 
       if (data.poster instanceof File) {
         const uploadResult = await uploadImageToCloudinary(data.poster, () =>
           generateSignature(),
         );
         posterUrl = uploadResult.url;
+        posterPublicId = uploadResult.publicId;
       }
 
       const payload = {
         ...data,
         poster: typeof posterUrl === "string" ? posterUrl : undefined,
+        posterPublicId,
       };
 
       if (editingItem) {

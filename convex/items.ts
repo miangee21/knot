@@ -11,11 +11,12 @@ export const create = mutation({
     parentId: v.optional(v.union(v.id("items"), v.null())),
     start: v.optional(v.union(v.number(), v.null())),
     end: v.optional(v.union(v.number(), v.null())),
-    sizeBytes: v.optional(v.union(v.number(), v.null())),
+    sizeBytes: v.number(),
     categoryId: v.optional(v.union(v.id("categories"), v.null())),
     locationIds: v.array(v.id("locations")),
     isFolder: v.optional(v.boolean()),
-    poster: v.optional(v.union(v.string(), v.null())), // Stores Cloudinary public_id or URL
+    poster: v.optional(v.union(v.string(), v.null())),
+    posterPublicId: v.optional(v.union(v.string(), v.null())),
     notes: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
@@ -28,11 +29,12 @@ export const create = mutation({
       parentId: args.parentId !== undefined ? args.parentId : null,
       rangeStart: args.start ?? undefined,
       rangeEnd: args.end ?? undefined,
-      sizeBytes: args.sizeBytes ?? undefined,
+      sizeBytes: args.sizeBytes,
       categoryId: args.categoryId ?? undefined,
       locationIds: args.locationIds,
       isFolder: args.isFolder ?? false,
       poster: args.poster ?? undefined,
+      posterPublicId: args.posterPublicId ?? undefined,
       notes: args.notes ?? undefined,
     });
   },
@@ -46,11 +48,12 @@ export const update = mutation({
     parentId: v.optional(v.union(v.id("items"), v.null())),
     start: v.optional(v.union(v.number(), v.null())),
     end: v.optional(v.union(v.number(), v.null())),
-    sizeBytes: v.optional(v.union(v.number(), v.null())),
+    sizeBytes: v.number(),
     categoryId: v.optional(v.union(v.id("categories"), v.null())),
     locationIds: v.array(v.id("locations")),
     isFolder: v.optional(v.boolean()),
     poster: v.optional(v.union(v.string(), v.null())),
+    posterPublicId: v.optional(v.union(v.string(), v.null())),
     notes: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
@@ -67,11 +70,12 @@ export const update = mutation({
       parentId: args.parentId !== undefined ? args.parentId : null,
       rangeStart: args.start ?? undefined,
       rangeEnd: args.end ?? undefined,
-      sizeBytes: args.sizeBytes ?? undefined,
+      sizeBytes: args.sizeBytes,
       categoryId: args.categoryId ?? undefined,
       locationIds: args.locationIds,
       isFolder: args.isFolder ?? false,
       poster: args.poster ?? undefined,
+      posterPublicId: args.posterPublicId ?? undefined,
       notes: args.notes ?? undefined,
     });
     return args.id;
@@ -169,10 +173,8 @@ export const getAncestors = query({
       currentId = item.parentId;
     }
 
-    // Returns array from nearest to furthest root: [parent, grandparent, root]
-    // The first item in the array is the item itself.
-    // Usually for inheritance we slice(1) on the frontend.
-    return ancestors;
+    // Reverse it so frontend gets it from root to current item: [root, grandparent, parent, item]
+    return ancestors.reverse();
   },
 });
 
@@ -189,5 +191,36 @@ export const search = query({
         q.search("name", args.query).eq("userId", userId),
       )
       .collect();
+  },
+});
+
+// 8. Helper to get all poster URLs for an item and its descendants before deletion
+export const getPostersForDeletion = query({
+  args: { id: v.id("items") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const publicIds: string[] = [];
+    const item = await ctx.db.get(args.id);
+    if (!item || item.userId !== userId) return [];
+
+    if (item.posterPublicId) publicIds.push(item.posterPublicId);
+
+    const getAllDescendants = async (parentId: Id<"items">) => {
+      const children = await ctx.db
+        .query("items")
+        .withIndex("by_parent", (q) => q.eq("parentId", parentId))
+        .filter((q) => q.eq(q.field("userId"), userId))
+        .collect();
+
+      for (const child of children) {
+        if (child.posterPublicId) publicIds.push(child.posterPublicId);
+        await getAllDescendants(child._id);
+      }
+    };
+
+    await getAllDescendants(args.id);
+    return publicIds;
   },
 });

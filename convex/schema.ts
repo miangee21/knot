@@ -37,13 +37,13 @@ export default defineSchema({
     name: v.string(),
 
     categoryId: v.optional(v.id("categories")), // unset → inherit from parent
-    locationIds: v.optional(v.array(v.id("locations"))), // unset/empty → inherit
+    locationIds: v.array(v.id("locations")),
 
     // Sequential range instead of one row per file
     rangeStart: v.optional(v.number()),
     rangeEnd: v.optional(v.number()),
 
-    sizeBytes: v.optional(v.number()),
+    sizeBytes: v.number(),
 
     posterUrl: v.optional(v.string()),
     posterPublicId: v.optional(v.string()),

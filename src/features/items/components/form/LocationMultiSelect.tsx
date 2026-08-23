@@ -52,8 +52,6 @@ export function LocationMultiSelect({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-foreground">Locations</label>
-
       {/* Wrapper to keep button and badges in the same line */}
       <div className="flex flex-row flex-wrap items-center gap-2">
         <Popover open={open} onOpenChange={setOpen}>
