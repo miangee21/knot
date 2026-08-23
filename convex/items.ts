@@ -224,3 +224,52 @@ export const getPostersForDeletion = query({
     return publicIds;
   },
 });
+
+// 9. Get stats for a specific folder
+export const getFolderCounts = query({
+  args: { parentId: v.id("items") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { folders: 0, files: 0 };
+
+    const children = await ctx.db
+      .query("items")
+      .withIndex("by_parent", (q) => q.eq("parentId", args.parentId))
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+
+    return {
+      folders: children.filter((c) => c.isFolder).length,
+      files: children.filter((c) => !c.isFolder).length,
+    };
+  },
+});
+
+// 10. Get global counts for locations and categories
+export const getGlobalCounts = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { categoryCounts: {}, locationCounts: {} };
+
+    const allItems = await ctx.db
+      .query("items")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+
+    const categoryCounts: Record<string, number> = {};
+    const locationCounts: Record<string, number> = {};
+
+    for (const item of allItems) {
+      if (item.categoryId) {
+        categoryCounts[item.categoryId] =
+          (categoryCounts[item.categoryId] || 0) + 1;
+      }
+      for (const loc of item.locationIds) {
+        locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+      }
+    }
+
+    return { categoryCounts, locationCounts };
+  },
+});

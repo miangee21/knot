@@ -15,6 +15,8 @@ import {
 import { CapacityBar } from "./CapacityBar";
 import { bytesToDisplay } from "../utils/formatBytes";
 import { LocationDoc } from "./LocationCard";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +51,9 @@ export function LocationListRow({
   onEdit,
   onDelete,
 }: LocationListRowProps) {
+  const counts = useQuery(api.items.getGlobalCounts);
+  const itemCount = counts?.locationCounts?.[location._id] || 0;
+
   const IconComponent = iconMap[location.icon] || Folder;
   const kindData = kindConfig[location.kind];
 
@@ -65,6 +70,10 @@ export function LocationListRow({
             {location.name}
           </h3>
           <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <span className="font-semibold text-primary">
+              {itemCount} {itemCount === 1 ? "Item" : "Items"}
+            </span>{" "}
+            •{" "}
             {location.notes || (
               <span className="italic opacity-70">No notes</span>
             )}

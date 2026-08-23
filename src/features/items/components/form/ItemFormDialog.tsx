@@ -1,11 +1,11 @@
 //src/features/items/components/form/ItemFormDialog.tsx
 "use client";
-
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -134,7 +134,16 @@ export function ItemFormDialog({
           />
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmit, (errors) => {
+            if (errors.poster?.message) {
+              toast.error(errors.poster.message as string);
+            } else {
+              toast.error("Please fill in all required fields correctly.");
+            }
+          })}
+          className="space-y-6"
+        >
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-7 flex flex-col gap-5">
               <div className="space-y-1.5">
@@ -153,7 +162,6 @@ export function ItemFormDialog({
                   </p>
                 )}
               </div>
-
               <Controller
                 control={control}
                 name="start"
@@ -228,7 +236,6 @@ export function ItemFormDialog({
                 />
               </div>
             </div>
-
             <div className="md:col-span-5 flex flex-col gap-5">
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-foreground">
@@ -246,7 +253,6 @@ export function ItemFormDialog({
                   )}
                 />
               </div>
-
               <div className="space-y-1.5 flex-1 flex flex-col">
                 <label className="text-sm font-semibold text-foreground">
                   Notes (Optional)
@@ -259,7 +265,6 @@ export function ItemFormDialog({
               </div>
             </div>
           </div>
-
           <div className="flex justify-end gap-3 pt-2 mt-2">
             <Button
               type="button"

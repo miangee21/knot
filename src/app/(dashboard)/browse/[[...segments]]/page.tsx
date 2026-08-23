@@ -29,7 +29,7 @@ import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { Id } from "../../../../../convex/_generated/dataModel";
 import { api } from "../../../../../convex/_generated/api";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { uploadImageToCloudinary } from "../../../../features/items/utils/cloudinary";
 
 export default function BrowsePage() {
@@ -73,14 +73,20 @@ export default function BrowsePage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
-  // Search Filter Logic
+  // Global Search Query (Searches whole DB when searchTerm exists)
+  const searchResults = useQuery(
+    api.items.search,
+    searchTerm ? { query: searchTerm } : "skip",
+  );
+  const isSearching = searchTerm.length > 0 && searchResults === undefined;
+
+  // Search Filter Logic (Global vs Local)
   const filteredItems = React.useMemo(() => {
-    if (!items) return [];
-    if (!searchTerm) return items;
-    return items.filter((item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [items, searchTerm]);
+    if (searchTerm) {
+      return searchResults || [];
+    }
+    return items || [];
+  }, [items, searchTerm, searchResults]);
 
   // Pagination Logic
   const totalItems = filteredItems.length;
@@ -184,7 +190,7 @@ export default function BrowsePage() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col space-y-2">
-        {itemsLoading || ancestorsLoading ? (
+        {itemsLoading || ancestorsLoading || isSearching ? (
           <div className="flex items-center justify-center min-h-[40vh]">
             <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           </div>

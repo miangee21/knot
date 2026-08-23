@@ -3,6 +3,8 @@
 
 import { MoreVertical, Edit2, Trash2, Tag } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +30,8 @@ export function CategoryCard({
   onEdit,
   onDelete,
 }: CategoryCardProps) {
+  const counts = useQuery(api.items.getGlobalCounts);
+  const itemCount = counts?.categoryCounts?.[category._id] || 0;
   const IconComponent = (LucideIcons as any)[category.icon] || Tag;
 
   return (
@@ -42,7 +46,7 @@ export function CategoryCard({
             {category.name}
           </h3>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5 opacity-80">
-            Category
+            {itemCount} {itemCount === 1 ? "Item" : "Items"}
           </p>
         </div>
       </div>

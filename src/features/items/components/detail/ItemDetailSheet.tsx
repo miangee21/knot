@@ -8,6 +8,8 @@ import { InfoCard } from "./InfoCard";
 import { ItemPathField } from "./ItemPathField";
 import { bytesToDisplay } from "@/features/locations/utils/formatBytes";
 import { formatRange } from "@/features/items/utils/formatRange";
+import { useQuery } from "convex/react";
+import { api } from "../../../../../convex/_generated/api";
 
 interface ItemDetailSheetProps {
   item: any | null;
@@ -26,7 +28,22 @@ export function ItemDetailSheet({
   categories,
   ancestors = [],
 }: ItemDetailSheetProps) {
+  // HOOKS HAMESHA EARLY RETURN SE PEHLE!
+  const isFolder = item?.isFolder || false;
+  const itemId = item?._id;
+
+  const folderCounts = useQuery(
+    api.items.getFolderCounts,
+    isFolder && itemId ? { parentId: itemId } : "skip",
+  );
+
   if (!item) return null;
+
+  const subtitle = item.isFolder
+    ? folderCounts
+      ? `${folderCounts.folders} Folders, ${folderCounts.files} Files`
+      : "Calculating..."
+    : "1 File";
 
   const catName =
     categories.find((c) => c._id === item.categoryId)?.name || "Uncategorized";
@@ -90,7 +107,7 @@ export function ItemDetailSheet({
                 </h2>
 
                 <p className="mt-1 text-[10px] font-medium text-muted-foreground">
-                  {item.isFolder ? "Folder details" : "File details"}
+                  {subtitle}
                 </p>
               </div>
             </div>

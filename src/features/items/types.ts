@@ -10,7 +10,17 @@ export const itemFormSchema = z.object({
   categoryId: z.string().optional().nullable(),
   locationIds: z.array(z.string()),
   isFolder: z.boolean(),
-  poster: z.any().optional().nullable(),
+  poster: z
+    .any()
+    .refine(
+      (file) =>
+        !file ||
+        !(typeof window !== "undefined" && file instanceof File) ||
+        file.size <= 5 * 1024 * 1024,
+      "Image size must be less than 5MB",
+    )
+    .optional()
+    .nullable(),
   notes: z.string().optional().nullable(),
 });
 
