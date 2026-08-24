@@ -1,20 +1,18 @@
 //src/app/(dashboard)/browse/[[...segments]]/page.tsx
 "use client";
+
 import * as React from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Plus, PackageOpen } from "lucide-react";
 // Shared Components
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
-import { SearchBar } from "@/shared/components/SearchBar";
 import { Pagination } from "@/shared/components/Pagination";
-// Form & Types
 import { ItemFormData } from "@/features/items/types";
 // Browser UI Components
-import { ItemBreadcrumb } from "@/features/items/components/browser/ItemBreadcrumb";
+import { BrowseHeader } from "@/features/items/components/browser/BrowseHeader";
 import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
 import { ItemListTable } from "@/features/items/components/browser/ItemListTable";
-import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
 import { BrowseModals } from "@/features/items/components/browser/BrowseModals";
 // Hooks
 import { useItemChildren } from "@/features/items/hooks/useItemChildren";
@@ -180,49 +178,18 @@ export default function BrowsePage() {
 
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/50 pb-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-              Browse
-            </h1>
-            {locationFilterId && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold mt-1">
-                Location Filter Active
-                <button
-                  onClick={() => router.push(currentPath)}
-                  className="ml-1 hover:text-destructive transition-colors text-lg leading-none"
-                >
-                  &times;
-                </button>
-              </span>
-            )}
-          </div>
-
-          {/* Dynamic Breadcrumbs Component */}
-          {!ancestorsLoading && <ItemBreadcrumb ancestors={ancestors} />}
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-          {items && items.length > 0 && (
-            <SearchBar
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Search items..."
-              className="w-full sm:w-56"
-            />
-          )}
-          {/* Grid vs List Toggle */}
-          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
-          <Button
-            onClick={openNewDialog}
-            className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:-translate-y-px transition-all h-11 px-6 w-full sm:w-auto shrink-0"
-          >
-            <Plus className="w-5 h-5 mr-2" /> Add Item
-          </Button>
-        </div>
-      </div>
+      <BrowseHeader
+        locationFilterId={locationFilterId}
+        currentPath={currentPath}
+        ancestors={ancestors || []}
+        ancestorsLoading={ancestorsLoading}
+        items={items || []}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        openNewDialog={openNewDialog}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col space-y-2">

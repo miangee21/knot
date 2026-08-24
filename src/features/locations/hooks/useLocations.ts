@@ -46,7 +46,7 @@ export function useLocations() {
         toast.error("Cannot delete. This location is used by items.", {
           action: {
             label: "View Items",
-            onClick: () => router.push(`/browse?locationId=${id}`),
+            onClick: () => router.push(`/browse?locationFilterId=${id}`),
           },
           duration: 10000,
         });

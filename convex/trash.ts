@@ -145,9 +145,24 @@ export const restore = mutation({
         currentParentId = parent?.parentId || null;
       }
 
-      await ctx.db.patch(itemId, { deletedAt: undefined });
+      // CASCADE RESTORE FOR DESCENDANTS
+      const restoreDescendants = async (parentId: Id<"items">) => {
+        const children = await ctx.db
+          .query("items")
+          .withIndex("by_parent", (q) => q.eq("parentId", parentId))
+          .filter((q) => q.eq(q.field("userId"), userId))
+          .collect();
 
-      // Note: We don't auto-restore all children unless requested, keeping it simple
+        for (const child of children) {
+          if (child.deletedAt !== undefined) {
+            await ctx.db.patch(child._id, { deletedAt: undefined });
+            await restoreDescendants(child._id); // Recursive
+          }
+        }
+      };
+
+      await ctx.db.patch(itemId, { deletedAt: undefined });
+      await restoreDescendants(itemId);
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
       if (catId) await ctx.db.patch(catId, { deletedAt: undefined });

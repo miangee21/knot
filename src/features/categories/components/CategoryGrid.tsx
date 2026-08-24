@@ -1,32 +1,23 @@
-//src/features/categories/components/CategoryList.tsx
+//src/features/categories/components/CategoryGrid.tsx
 "use client";
 
 import * as React from "react";
 import { CategoryCard, CategoryDoc } from "./CategoryCard";
 import { Pagination } from "@/shared/components/Pagination";
 
-interface CategoryListProps {
+interface CategoryGridProps {
   categories: CategoryDoc[];
   onEdit: (category: CategoryDoc) => void;
   onDelete: (id: string) => void;
 }
 
-export function CategoryList({
+export function CategoryGrid({
   categories,
   onEdit,
   onDelete,
-}: CategoryListProps) {
+}: CategoryGridProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
-
-  // Reset to page 1 if user changes "items per page" dropdown
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const val = e.target.value;
-    setItemsPerPage(val === "all" ? "all" : Number(val));
-    setCurrentPage(1);
-  };
 
   const totalItems = categories.length;
   const isAll = itemsPerPage === "all";

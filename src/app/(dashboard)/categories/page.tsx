@@ -5,7 +5,7 @@ import * as React from "react";
 import { Plus, Tag, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
-import { CategoryList } from "@/features/categories/components/CategoryList";
+import { CategoryGrid } from "@/features/categories/components/CategoryGrid";
 import { CategoryFormDialog } from "@/features/categories/components/CategoryFormDialog";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { SearchBar } from "@/shared/components/SearchBar";
@@ -153,7 +153,7 @@ export default function CategoriesPage() {
             }
           />
         ) : (
-          <CategoryList
+          <CategoryGrid
             categories={filteredCategories}
             onEdit={openEditDialog}
             onDelete={confirmDelete}

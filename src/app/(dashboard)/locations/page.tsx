@@ -2,30 +2,16 @@
 "use client";
 
 import * as React from "react";
-import {
-  Plus,
-  LayoutGrid,
-  List as ListIcon,
-  HardDrive,
-  Loader2,
-  XCircle,
-} from "lucide-react";
+import { HardDrive, Loader2, XCircle, Plus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
+import { LocationHeader } from "@/features/locations/components/LocationHeader";
 import { LocationGrid } from "@/features/locations/components/LocationGrid";
 import { LocationListRow } from "@/features/locations/components/LocationListRow";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/components/ui/dialog";
 import { LocationFormDialog } from "@/features/locations/components/LocationFormDialog";
-import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
-import { SearchBar } from "@/shared/components/SearchBar";
+import { LocationDeleteModals } from "@/features/locations/components/LocationDeleteModals";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { LocationFormData } from "@/features/locations/types";
 import { LocationDoc } from "@/features/locations/components/LocationCard";
@@ -35,7 +21,6 @@ import { Pagination } from "@/shared/components/Pagination";
 export default function LocationsPage() {
   const { locations, isLoading, handleCreate, handleUpdate, handleDelete } =
     useLocations();
-  const router = useRouter();
   const counts = useQuery(api.items.getGlobalCounts);
   const locationCounts = counts?.locationCounts || {};
 
@@ -84,15 +69,6 @@ export default function LocationsPage() {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
-
-  // Reset to page 1 if user changes "items per page" dropdown
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const val = e.target.value;
-    setItemsPerPage(val === "all" ? "all" : Number(val));
-    setCurrentPage(1);
-  };
 
   // Pagination Math
   const totalItems = filteredLocations.length;
@@ -151,62 +127,14 @@ export default function LocationsPage() {
 
   return (
     <div className="flex flex-col space-y-4 animate-in fade-in-50 duration-500 w-full">
-      {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Locations
-          </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm sm:text-base">
-            Manage your physical and cloud storage drives.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          {/* Search Bar */}
-          {locations && locations.length > 0 && (
-            <SearchBar
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Search locations..."
-              className="sm:w-64"
-            />
-          )}
-
-          {/* View Toggles */}
-          {locations && locations.length > 0 && (
-            <div className="flex items-center bg-card border border-border/50 rounded-full p-1 shadow-sm shrink-0">
-              <button
-                onClick={() => handleViewChange("grid")}
-                className={`p-2 rounded-full transition-all ${
-                  view === "grid"
-                    ? "bg-muted text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleViewChange("list")}
-                className={`p-2 rounded-full transition-all ${
-                  view === "list"
-                    ? "bg-muted text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <ListIcon className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          <Button
-            onClick={openNewDialog}
-            className="w-full sm:w-auto rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:-translate-y-px transition-all h-11 px-5 shrink-0"
-          >
-            <Plus className="w-5 h-5 mr-2" /> Add Location
-          </Button>
-        </div>
-      </div>
+      <LocationHeader
+        hasLocations={!!locations && locations.length > 0}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        view={view}
+        handleViewChange={handleViewChange}
+        openNewDialog={openNewDialog}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1">
@@ -285,68 +213,11 @@ export default function LocationsPage() {
         isLoading={isSubmitting}
       />
 
-      {/* Blocked Delete Dialog (If Items Exist) */}
-      <Dialog
-        open={!!locationToDelete && (locationCounts[locationToDelete] || 0) > 0}
-        onOpenChange={(open) => !open && setLocationToDelete(null)}
-      >
-        <DialogContent className="max-w-md rounded-3xl p-6 bg-card border-border/80 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-              <XCircle className="w-6 h-6 text-destructive" /> Cannot Delete
-              Location
-            </DialogTitle>
-            <div className="text-sm text-muted-foreground mt-2 leading-relaxed">
-              This location cannot be deleted because it is currently linked to{" "}
-              <span className="font-bold text-foreground">
-                {locationToDelete ? locationCounts[locationToDelete] : 0}{" "}
-                item(s)
-              </span>
-              . You must reassign or delete these items before removing this
-              location.
-            </div>
-          </DialogHeader>
-          <div className="mt-6 flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setLocationToDelete(null)}
-              className="rounded-full"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (locationToDelete) {
-                  router.push(`/browse?locationFilterId=${locationToDelete}`);
-                }
-              }}
-              className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
-            >
-              View Linked Items
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Standard Delete Dialog (Move to Bin - If Empty) */}
-      <ConfirmDialog
-        isOpen={
-          !!locationToDelete && (locationCounts[locationToDelete] || 0) === 0
-        }
-        onClose={() => setLocationToDelete(null)}
-        onConfirm={async () => {
-          if (locationToDelete) {
-            try {
-              await handleDelete(locationToDelete);
-            } catch (e) {
-              // Error handled by hook toast
-            } finally {
-              setLocationToDelete(null);
-            }
-          }
-        }}
-        title="Delete Location"
-        description="Are you sure you want to move this location to the Recycle Bin?"
+      <LocationDeleteModals
+        locationToDelete={locationToDelete}
+        setLocationToDelete={setLocationToDelete}
+        locationCounts={locationCounts}
+        handleDelete={handleDelete}
       />
     </div>
   );

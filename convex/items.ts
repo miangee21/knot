@@ -88,52 +88,6 @@ export const update = mutation({
   },
 });
 
-// 3. Remove an Item (Temporary until TrashManager is built)
-export const remove = mutation({
-  args: { id: v.id("items") },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const existing = await ctx.db.get(args.id);
-    if (!existing || existing.userId !== userId) {
-      throw new Error("Item not found or unauthorized");
-    }
-
-    const getAllDescendants = async (
-      parentId: Id<"items">,
-    ): Promise<Id<"items">[]> => {
-      const children = await ctx.db
-        .query("items")
-        .withIndex("by_parent", (q) => q.eq("parentId", parentId))
-        .filter((q) => q.eq(q.field("userId"), userId))
-        .collect();
-
-      let descendants = children.map((c) => c._id);
-      for (const child of children) {
-        descendants = descendants.concat(await getAllDescendants(child._id));
-      }
-      return descendants;
-    };
-
-    const descendantsToDelete = await getAllDescendants(args.id);
-
-    for (const childId of descendantsToDelete) {
-      const child = await ctx.db.get(childId);
-      if (child?.posterStorageId) {
-        await ctx.storage.delete(child.posterStorageId);
-      }
-      await ctx.db.delete(childId);
-    }
-
-    if (existing.posterStorageId) {
-      await ctx.storage.delete(existing.posterStorageId);
-    }
-    await ctx.db.delete(args.id);
-    return true;
-  },
-});
-
 // Helper function to resolve poster URL on the fly
 async function withPosterUrl(ctx: any, item: any) {
   if (!item) return item;
