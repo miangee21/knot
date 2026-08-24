@@ -6,19 +6,16 @@ import { Plus, PackageOpen } from "lucide-react";
 // Shared Components
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
-import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { SearchBar } from "@/shared/components/SearchBar";
 import { Pagination } from "@/shared/components/Pagination";
 // Form & Types
-import { ItemFormDialog } from "@/features/items/components/form/ItemFormDialog";
 import { ItemFormData } from "@/features/items/types";
 // Browser UI Components
 import { ItemBreadcrumb } from "@/features/items/components/browser/ItemBreadcrumb";
 import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
 import { ItemListTable } from "@/features/items/components/browser/ItemListTable";
 import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
-import { ItemDetailSheet } from "@/features/items/components/detail/ItemDetailSheet";
-import { MoveItemDialog } from "@/features/items/components/browser/MoveItemDialog";
+import { BrowseModals } from "@/features/items/components/browser/BrowseModals";
 // Hooks
 import { useItemChildren } from "@/features/items/hooks/useItemChildren";
 import { useItemAncestors } from "@/features/items/hooks/useItemAncestors";
@@ -131,7 +128,6 @@ export default function BrowsePage() {
     try {
       let posterUrl = data.poster;
       let posterPublicId = undefined;
-
       if (data.poster instanceof File) {
         const uploadResult = await uploadImageToCloudinary(data.poster, () =>
           generateSignature(),
@@ -139,18 +135,15 @@ export default function BrowsePage() {
         posterUrl = uploadResult.url;
         posterPublicId = uploadResult.publicId;
       }
-
       const payload = {
         ...data,
         poster: typeof posterUrl === "string" ? posterUrl : undefined,
         posterPublicId,
       };
 
-      if (editingItem) {
-        await handleUpdate(editingItem._id, payload);
-      } else {
-        await handleCreate(payload);
-      }
+      if (editingItem) await handleUpdate(editingItem._id, payload);
+      else await handleCreate(payload);
+
       setIsFormOpen(false);
     } catch (error) {
       console.error("Submission failed:", error);
@@ -280,41 +273,24 @@ export default function BrowsePage() {
           </>
         )}
       </div>
-      {/* Item Form Dialog */}
-      <ItemFormDialog
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={onFormSubmit}
-        initialData={editingItem}
-        defaultParentId={currentParentId || undefined}
+      {/* Unified Modals Component */}
+      <BrowseModals
+        isFormOpen={isFormOpen}
+        setIsFormOpen={setIsFormOpen}
+        onFormSubmit={onFormSubmit}
+        editingItem={editingItem}
+        currentParentId={currentParentId}
         categories={categories || []}
         locations={locations || []}
         inheritedLocationIds={inheritedLocationIds}
-        isLoading={isSubmitting}
-      />
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={!!itemToDelete}
-        onClose={() => setItemToDelete(null)}
-        onConfirm={onConfirmDelete}
-        title="Delete Item"
-        description="Are you sure you want to delete this item? If this is a folder, ALL items inside it will also be deleted forever."
-      />
-
-      {/* Move Item Dialog */}
-      <MoveItemDialog
-        item={movingItem}
-        isOpen={!!movingItem}
-        onClose={() => setMovingItem(null)}
-      />
-
-      {/* Item Detail Side Sheet */}
-      <ItemDetailSheet
-        item={detailItem}
-        isOpen={!!detailItem}
-        onClose={() => setDetailItem(null)}
-        allLocations={locations || []}
-        categories={categories || []}
+        isSubmitting={isSubmitting}
+        itemToDelete={itemToDelete}
+        setItemToDelete={setItemToDelete}
+        onConfirmDelete={onConfirmDelete}
+        movingItem={movingItem}
+        setMovingItem={setMovingItem}
+        detailItem={detailItem}
+        setDetailItem={setDetailItem}
         ancestors={ancestors}
       />
     </div>
