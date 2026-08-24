@@ -82,7 +82,7 @@ export function ItemDetailSheet({
                 "
               >
                 <ItemThumbnail
-                  posterUrl={item.poster}
+                  posterUrl={item.posterUrl}
                   isFolder={item.isFolder}
                   className="h-full w-full object-cover"
                   iconClassName="h-7 w-7"

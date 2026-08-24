@@ -173,9 +173,17 @@ export default function CategoriesPage() {
       <ConfirmDialog
         isOpen={!!categoryToDelete}
         onClose={() => setCategoryToDelete(null)}
-        onConfirm={() => categoryToDelete && handleDelete(categoryToDelete)}
+        onConfirm={async () => {
+          if (categoryToDelete) {
+            try {
+              await handleDelete(categoryToDelete);
+            } finally {
+              setCategoryToDelete(null);
+            }
+          }
+        }}
         title="Delete Category"
-        description="Are you sure you want to delete this category? Items using this category will be marked as uncategorized. This action cannot be undone."
+        description="Are you sure you want to move this category to the Recycle Bin?"
       />
     </div>
   );

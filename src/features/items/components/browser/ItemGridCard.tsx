@@ -84,7 +84,7 @@ export function ItemGridCard({
         />
 
         <ItemThumbnail
-          posterUrl={item.poster}
+          posterUrl={item.posterUrl}
           isFolder={isFolder}
           className={cn(
             "h-full w-full transition-transform duration-300 ease-out",

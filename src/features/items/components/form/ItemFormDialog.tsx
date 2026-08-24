@@ -83,7 +83,7 @@ export function ItemFormDialog({
           ? initialData.locationIds || []
           : inheritedLocationIds || [],
         isFolder: initialData?.isFolder || false,
-        poster: initialData?.poster || null,
+        poster: initialData?.posterUrl || null,
         notes: initialData?.notes || "",
       });
     }

@@ -70,8 +70,7 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
         isFolder: item.isFolder ?? false,
         start: item.rangeStart ?? null,
         end: item.rangeEnd ?? null,
-        poster: item.poster ?? null,
-        posterPublicId: item.posterPublicId ?? null,
+        posterStorageId: item.posterStorageId ?? undefined,
         notes: item.notes ?? null,
         parentId: currentFolderId,
       });

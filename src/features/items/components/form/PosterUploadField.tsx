@@ -8,14 +8,12 @@ import { cn } from "@/shared/lib/utils";
 interface PosterUploadFieldProps {
   value: File | string | null;
   onChange: (file: File | null) => void;
-  onRemoveExisting?: () => void;
   disabled?: boolean;
 }
 
 export function PosterUploadField({
   value,
   onChange,
-  onRemoveExisting,
   disabled,
 }: PosterUploadFieldProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -46,9 +44,6 @@ export function PosterUploadField({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (typeof value === "string" && onRemoveExisting) {
-      onRemoveExisting();
-    }
     onChange(null);
     if (inputRef.current) {
       inputRef.current.value = "";

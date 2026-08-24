@@ -11,7 +11,7 @@ export function useCategories() {
   const categories = useQuery(api.categories.getCategories);
   const createCategory = useMutation(api.categories.createCategory);
   const updateCategory = useMutation(api.categories.updateCategory);
-  const deleteCategory = useMutation(api.categories.deleteCategory);
+  const moveToBin = useMutation(api.trash.moveToBin);
 
   const isLoading = categories === undefined;
 
@@ -37,8 +37,8 @@ export function useCategories() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteCategory({ id: id as Id<"categories"> });
-      toast.success("Category deleted.");
+      await moveToBin({ id, type: "category" });
+      toast.success("Category moved to Recycle Bin.");
     } catch (error) {
       toast.error("Failed to delete category.");
       throw error;

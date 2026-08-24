@@ -42,6 +42,7 @@ export function Navbar() {
     { name: "Browse", path: "/browse" },
     { name: "Categories", path: "/categories" },
     { name: "Risk", path: "/risk" },
+    { name: "Trash", path: "/trash" },
   ];
 
   return (

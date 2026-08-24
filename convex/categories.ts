@@ -13,6 +13,7 @@ export const getCategories = query({
     return await ctx.db
       .query("categories")
       .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .order("desc")
       .collect();
   },
@@ -65,19 +66,16 @@ export const deleteCategory = mutation({
       throw new Error("Category not found or unauthorized");
     }
 
-    // Implementation file rule: Clear categoryId from all items that use this category
     const linkedItems = await ctx.db
       .query("items")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("categoryId"), args.id))
       .collect();
 
-    // Patch each item to remove the category reference
     for (const item of linkedItems) {
       await ctx.db.patch(item._id, { categoryId: undefined });
     }
 
-    // Finally, delete the category itself
     await ctx.db.delete(args.id);
   },
 });

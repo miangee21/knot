@@ -12,6 +12,7 @@ export const getLocations = query({
     return await ctx.db
       .query("locations")
       .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
   },
 });
@@ -80,8 +81,6 @@ export const deleteLocation = mutation({
       throw new Error("Location not found or unauthorized");
     }
 
-    // Note: We will add the logic to strip this location from items
-    // when we build the Items Feature (Step 12). For now, it deletes the location itself.
     await ctx.db.delete(args.id);
   },
 });

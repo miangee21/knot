@@ -89,7 +89,7 @@ export function ItemListRow({
       {/* Thumbnail */}
       <div className="relative h-12 w-10 shrink-0 self-center overflow-hidden rounded-xl bg-muted/40 ring-1 ring-inset ring-border/40">
         <ItemThumbnail
-          posterUrl={item.poster}
+          posterUrl={item.posterUrl}
           isFolder={isFolder}
           variant="list"
           className="h-full w-full"

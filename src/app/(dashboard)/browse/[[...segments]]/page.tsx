@@ -1,7 +1,7 @@
 //src/app/(dashboard)/browse/[[...segments]]/page.tsx
 "use client";
 import * as React from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Plus, PackageOpen } from "lucide-react";
 // Shared Components
 import { Button } from "@/shared/components/ui/button";
@@ -27,13 +27,14 @@ import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { Id } from "../../../../../convex/_generated/dataModel";
 import { api } from "../../../../../convex/_generated/api";
-import { useAction, useQuery } from "convex/react";
-import { uploadImageToCloudinary } from "../../../../features/items/utils/cloudinary";
+import { useMutation, useQuery } from "convex/react";
 
 export default function BrowsePage() {
   // Navigation & Route State
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const locationFilterId = searchParams.get("locationFilterId");
   const segments = params.segments as string[] | undefined;
 
   // Get currentParentId from the last segment in the URL
@@ -69,7 +70,7 @@ export default function BrowsePage() {
   const { handleCreate } = useCreateItem();
   const { handleUpdate } = useUpdateItem();
   const { handleDelete } = useDeleteItem();
-  const generateSignature = useAction(api.cloudinary.generateUploadSignature);
+  const generateUploadUrl = useMutation(api.items.generateUploadUrl);
 
   // Form & Modals State
   const [isFormOpen, setIsFormOpen] = React.useState(false);
@@ -93,11 +94,17 @@ export default function BrowsePage() {
 
   // Search Filter Logic (Global vs Local)
   const filteredItems = React.useMemo(() => {
-    if (searchTerm) {
-      return searchResults || [];
+    let baseItems = searchTerm ? searchResults || [] : items || [];
+
+    // Smart Dependency Filter: Show only items using this specific location
+    if (locationFilterId) {
+      baseItems = baseItems.filter((item) =>
+        (item.locationIds as string[]).includes(locationFilterId),
+      );
     }
-    return items || [];
-  }, [items, searchTerm, searchResults]);
+
+    return baseItems;
+  }, [items, searchTerm, searchResults, locationFilterId]);
 
   // Pagination Logic
   const totalItems = filteredItems.length;
@@ -126,19 +133,28 @@ export default function BrowsePage() {
   const onFormSubmit = async (data: ItemFormData) => {
     setIsSubmitting(true);
     try {
-      let posterUrl = data.poster;
-      let posterPublicId = undefined;
+      let posterStorageId = undefined;
+      // 1. Native Convex Storage Upload
       if (data.poster instanceof File) {
-        const uploadResult = await uploadImageToCloudinary(data.poster, () =>
-          generateSignature(),
-        );
-        posterUrl = uploadResult.url;
-        posterPublicId = uploadResult.publicId;
+        const postUrl = await generateUploadUrl();
+        const result = await fetch(postUrl, {
+          method: "POST",
+          headers: { "Content-Type": data.poster.type },
+          body: data.poster,
+        });
+        const { storageId } = await result.json();
+        posterStorageId = storageId;
+      } else if (
+        typeof data.poster === "string" &&
+        editingItem?.posterStorageId
+      ) {
+        // Keep existing storage ID if not changed
+        posterStorageId = editingItem.posterStorageId;
       }
+      const { poster, ...cleanData } = data;
       const payload = {
-        ...data,
-        poster: typeof posterUrl === "string" ? posterUrl : undefined,
-        posterPublicId,
+        ...cleanData,
+        posterStorageId,
       };
 
       if (editingItem) await handleUpdate(editingItem._id, payload);
@@ -167,9 +183,22 @@ export default function BrowsePage() {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/50 pb-4">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Browse
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Browse
+            </h1>
+            {locationFilterId && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold mt-1">
+                Location Filter Active
+                <button
+                  onClick={() => router.push(currentPath)}
+                  className="ml-1 hover:text-destructive transition-colors text-lg leading-none"
+                >
+                  &times;
+                </button>
+              </span>
+            )}
+          </div>
 
           {/* Dynamic Breadcrumbs Component */}
           {!ancestorsLoading && <ItemBreadcrumb ancestors={ancestors} />}

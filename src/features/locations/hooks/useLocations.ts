@@ -6,12 +6,14 @@ import { api } from "../../../../convex/_generated/api";
 import { LocationFormData } from "../types";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function useLocations() {
   const locations = useQuery(api.locations.getLocations);
   const createLocation = useMutation(api.locations.createLocation);
   const updateLocation = useMutation(api.locations.updateLocation);
-  const deleteLocation = useMutation(api.locations.deleteLocation);
+  const moveToBin = useMutation(api.trash.moveToBin);
+  const router = useRouter();
 
   const isLoading = locations === undefined;
 
@@ -37,11 +39,21 @@ export function useLocations() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteLocation({ id: id as Id<"locations"> });
-      toast.success("Location deleted.");
-    } catch (error) {
-      toast.error("Failed to delete location.");
-      throw error;
+      await moveToBin({ id, type: "location" });
+      toast.success("Location moved to Recycle Bin.");
+    } catch (error: any) {
+      if (error.message.includes("LOCATION_HAS_ITEMS")) {
+        toast.error("Cannot delete. This location is used by items.", {
+          action: {
+            label: "View Items",
+            onClick: () => router.push(`/browse?locationId=${id}`),
+          },
+          duration: 10000,
+        });
+      } else {
+        toast.error("Failed to delete location.");
+      }
+      throw error; // Let the component know it failed so it can reset state
     }
   };
 

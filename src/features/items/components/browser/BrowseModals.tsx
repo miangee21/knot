@@ -65,7 +65,7 @@ export function BrowseModals({
         onClose={() => setItemToDelete(null)}
         onConfirm={onConfirmDelete}
         title="Delete Item"
-        description="Are you sure you want to delete this item? If this is a folder, ALL items inside it will also be deleted forever."
+        description="Are you sure you want to move this item to the Recycle Bin? If this is a folder, all items inside it will also be moved to the bin."
       />
       <MoveItemDialog
         item={movingItem}

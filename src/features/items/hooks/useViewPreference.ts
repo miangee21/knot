@@ -18,7 +18,7 @@ export function useViewPreference() {
 
   const toggleViewMode = (mode: ViewMode) => {
     setViewMode(mode);
-    localStorage.setItem("cinevault-view-mode", mode);
+    localStorage.setItem("knot-view-mode", mode);
   };
 
   return { viewMode, setViewMode: toggleViewMode };

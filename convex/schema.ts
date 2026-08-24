@@ -21,6 +21,7 @@ export default defineSchema({
     totalBytes: v.optional(v.number()),
     usedBytes: v.optional(v.number()),
     notes: v.optional(v.string()),
+    deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
   }).index("by_user", ["userId"]),
 
   // Categories table (badge-only, not primary navigation)
@@ -28,6 +29,7 @@ export default defineSchema({
     userId: v.id("users"),
     name: v.string(), // "Movies", "Series", "Software", "Documents"
     icon: v.string(),
+    deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
   }).index("by_user", ["userId"]),
 
   // Items table (the tree — the core of the whole app)
@@ -45,12 +47,11 @@ export default defineSchema({
 
     sizeBytes: v.number(),
 
-    posterUrl: v.optional(v.string()),
-    posterPublicId: v.optional(v.string()),
-
     isFolder: v.optional(v.boolean()),
-    poster: v.optional(v.string()),
+    posterStorageId: v.optional(v.id("_storage")),
     notes: v.optional(v.string()),
+
+    deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
   })
     .index("by_user", ["userId"])
     .index("by_parent", ["parentId"])

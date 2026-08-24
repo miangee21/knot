@@ -14,6 +14,15 @@ import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { LocationGrid } from "@/features/locations/components/LocationGrid";
 import { LocationListRow } from "@/features/locations/components/LocationListRow";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { LocationFormDialog } from "@/features/locations/components/LocationFormDialog";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { SearchBar } from "@/shared/components/SearchBar";
@@ -26,6 +35,9 @@ import { Pagination } from "@/shared/components/Pagination";
 export default function LocationsPage() {
   const { locations, isLoading, handleCreate, handleUpdate, handleDelete } =
     useLocations();
+  const router = useRouter();
+  const counts = useQuery(api.items.getGlobalCounts);
+  const locationCounts = counts?.locationCounts || {};
 
   // View State (Grid or List)
   const [view, setView] = React.useState<"grid" | "list">("grid");
@@ -273,12 +285,68 @@ export default function LocationsPage() {
         isLoading={isSubmitting}
       />
 
+      {/* Blocked Delete Dialog (If Items Exist) */}
+      <Dialog
+        open={!!locationToDelete && (locationCounts[locationToDelete] || 0) > 0}
+        onOpenChange={(open) => !open && setLocationToDelete(null)}
+      >
+        <DialogContent className="max-w-md rounded-3xl p-6 bg-card border-border/80 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <XCircle className="w-6 h-6 text-destructive" /> Cannot Delete
+              Location
+            </DialogTitle>
+            <div className="text-sm text-muted-foreground mt-2 leading-relaxed">
+              This location cannot be deleted because it is currently linked to{" "}
+              <span className="font-bold text-foreground">
+                {locationToDelete ? locationCounts[locationToDelete] : 0}{" "}
+                item(s)
+              </span>
+              . You must reassign or delete these items before removing this
+              location.
+            </div>
+          </DialogHeader>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setLocationToDelete(null)}
+              className="rounded-full"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (locationToDelete) {
+                  router.push(`/browse?locationFilterId=${locationToDelete}`);
+                }
+              }}
+              className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+            >
+              View Linked Items
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Standard Delete Dialog (Move to Bin - If Empty) */}
       <ConfirmDialog
-        isOpen={!!locationToDelete}
+        isOpen={
+          !!locationToDelete && (locationCounts[locationToDelete] || 0) === 0
+        }
         onClose={() => setLocationToDelete(null)}
-        onConfirm={() => locationToDelete && handleDelete(locationToDelete)}
+        onConfirm={async () => {
+          if (locationToDelete) {
+            try {
+              await handleDelete(locationToDelete);
+            } catch (e) {
+              // Error handled by hook toast
+            } finally {
+              setLocationToDelete(null);
+            }
+          }
+        }}
         title="Delete Location"
-        description="Are you sure you want to delete this location? This action cannot be undone."
+        description="Are you sure you want to move this location to the Recycle Bin?"
       />
     </div>
   );

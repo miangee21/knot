@@ -11,10 +11,10 @@
 import type * as appSettings from "../appSettings.js";
 import type * as auth from "../auth.js";
 import type * as categories from "../categories.js";
-import type * as cloudinary from "../cloudinary.js";
 import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as locations from "../locations.js";
+import type * as trash from "../trash.js";
 import type * as users from "../users.js";
 
 import type {
@@ -27,10 +27,10 @@ declare const fullApi: ApiFromModules<{
   appSettings: typeof appSettings;
   auth: typeof auth;
   categories: typeof categories;
-  cloudinary: typeof cloudinary;
   http: typeof http;
   items: typeof items;
   locations: typeof locations;
+  trash: typeof trash;
   users: typeof users;
 }>;
 

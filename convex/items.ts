@@ -4,6 +4,16 @@ import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 
+// Generate Upload URL for Convex Native Storage
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 // 1. Create an Item
 export const create = mutation({
   args: {
@@ -15,8 +25,7 @@ export const create = mutation({
     categoryId: v.optional(v.union(v.id("categories"), v.null())),
     locationIds: v.array(v.id("locations")),
     isFolder: v.optional(v.boolean()),
-    poster: v.optional(v.union(v.string(), v.null())),
-    posterPublicId: v.optional(v.union(v.string(), v.null())),
+    posterStorageId: v.optional(v.union(v.id("_storage"), v.null())),
     notes: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
@@ -33,8 +42,7 @@ export const create = mutation({
       categoryId: args.categoryId ?? undefined,
       locationIds: args.locationIds,
       isFolder: args.isFolder ?? false,
-      poster: args.poster ?? undefined,
-      posterPublicId: args.posterPublicId ?? undefined,
+      posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
     });
   },
@@ -52,8 +60,7 @@ export const update = mutation({
     categoryId: v.optional(v.union(v.id("categories"), v.null())),
     locationIds: v.array(v.id("locations")),
     isFolder: v.optional(v.boolean()),
-    poster: v.optional(v.union(v.string(), v.null())),
-    posterPublicId: v.optional(v.union(v.string(), v.null())),
+    posterStorageId: v.optional(v.union(v.id("_storage"), v.null())),
     notes: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
@@ -74,15 +81,14 @@ export const update = mutation({
       categoryId: args.categoryId ?? undefined,
       locationIds: args.locationIds,
       isFolder: args.isFolder ?? false,
-      poster: args.poster ?? undefined,
-      posterPublicId: args.posterPublicId ?? undefined,
+      posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
     });
     return args.id;
   },
 });
 
-// 3. Remove an Item (and cascade delete its children)
+// 3. Remove an Item (Temporary until TrashManager is built)
 export const remove = mutation({
   args: { id: v.id("items") },
   handler: async (ctx, args) => {
@@ -94,7 +100,6 @@ export const remove = mutation({
       throw new Error("Item not found or unauthorized");
     }
 
-    // Helper to recursively find all descendants
     const getAllDescendants = async (
       parentId: Id<"items">,
     ): Promise<Id<"items">[]> => {
@@ -113,19 +118,32 @@ export const remove = mutation({
 
     const descendantsToDelete = await getAllDescendants(args.id);
 
-    // Delete all descendants first
     for (const childId of descendantsToDelete) {
+      const child = await ctx.db.get(childId);
+      if (child?.posterStorageId) {
+        await ctx.storage.delete(child.posterStorageId);
+      }
       await ctx.db.delete(childId);
-      // NOTE: If you are storing Cloudinary publicIds in 'poster',
-      // you will handle the Cloudinary API deletion from the frontend
-      // BEFORE calling this mutation, or implement a backend hook/action.
     }
 
-    // Delete the parent item
+    if (existing.posterStorageId) {
+      await ctx.storage.delete(existing.posterStorageId);
+    }
     await ctx.db.delete(args.id);
     return true;
   },
 });
+
+// Helper function to resolve poster URL on the fly
+async function withPosterUrl(ctx: any, item: any) {
+  if (!item) return item;
+  return {
+    ...item,
+    posterUrl: item.posterStorageId
+      ? await ctx.storage.getUrl(item.posterStorageId)
+      : undefined,
+  };
+}
 
 // 4. Get a specific Item
 export const getById = query({
@@ -135,22 +153,32 @@ export const getById = query({
     if (!userId) return null;
 
     const item = await ctx.db.get(args.id);
-    return item?.userId === userId ? item : null;
+    if (item?.userId === userId && item.deletedAt === undefined) {
+      return await withPosterUrl(ctx, item);
+    }
+    return null;
   },
 });
 
-// 5. Get Children of a specific Parent (or Root items if parentId is null)
+// 5. Get Children of a specific Parent
 export const getChildren = query({
   args: { parentId: v.union(v.id("items"), v.null()) },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    return await ctx.db
+    const items = await ctx.db
       .query("items")
       .withIndex("by_parent", (q) => q.eq("parentId", args.parentId))
-      .filter((q) => q.eq(q.field("userId"), userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("userId"), userId),
+          q.eq(q.field("deletedAt"), undefined),
+        ),
+      )
       .collect();
+
+    return await Promise.all(items.map((item) => withPosterUrl(ctx, item)));
   },
 });
 
@@ -164,68 +192,41 @@ export const getAncestors = query({
     const ancestors: any[] = [];
     let currentId = args.itemId as Id<"items"> | null;
 
-    // Walk up the tree until root
     while (currentId) {
       const item = await ctx.db.get(currentId);
-      if (!item || item.userId !== userId) break;
+      if (!item || item.userId !== userId || item.deletedAt !== undefined)
+        break;
 
-      ancestors.push(item);
+      ancestors.push(await withPosterUrl(ctx, item));
       currentId = item.parentId;
     }
 
-    // Reverse it so frontend gets it from root to current item: [root, grandparent, parent, item]
     return ancestors.reverse();
   },
 });
 
-// 7. Search Items (Professional Convex Search Index)
+// 7. Search Items
 export const search = query({
   args: { query: v.string() },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    return await ctx.db
+    const results = await ctx.db
       .query("items")
       .withSearchIndex("search_name", (q) =>
         q.search("name", args.query).eq("userId", userId),
       )
       .collect();
+
+    const activeItems = results.filter((i) => i.deletedAt === undefined);
+    return await Promise.all(
+      activeItems.map((item) => withPosterUrl(ctx, item)),
+    );
   },
 });
 
-// 8. Helper to get all poster URLs for an item and its descendants before deletion
-export const getPostersForDeletion = query({
-  args: { id: v.id("items") },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const publicIds: string[] = [];
-    const item = await ctx.db.get(args.id);
-    if (!item || item.userId !== userId) return [];
-
-    if (item.posterPublicId) publicIds.push(item.posterPublicId);
-
-    const getAllDescendants = async (parentId: Id<"items">) => {
-      const children = await ctx.db
-        .query("items")
-        .withIndex("by_parent", (q) => q.eq("parentId", parentId))
-        .filter((q) => q.eq(q.field("userId"), userId))
-        .collect();
-
-      for (const child of children) {
-        if (child.posterPublicId) publicIds.push(child.posterPublicId);
-        await getAllDescendants(child._id);
-      }
-    };
-
-    await getAllDescendants(args.id);
-    return publicIds;
-  },
-});
-
-// 9. Get stats for a specific folder
+// 8. Get stats for a specific folder
 export const getFolderCounts = query({
   args: { parentId: v.id("items") },
   handler: async (ctx, args) => {
@@ -235,7 +236,12 @@ export const getFolderCounts = query({
     const children = await ctx.db
       .query("items")
       .withIndex("by_parent", (q) => q.eq("parentId", args.parentId))
-      .filter((q) => q.eq(q.field("userId"), userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("userId"), userId),
+          q.eq(q.field("deletedAt"), undefined),
+        ),
+      )
       .collect();
 
     return {
@@ -245,7 +251,7 @@ export const getFolderCounts = query({
   },
 });
 
-// 10. Get global counts for locations and categories
+// 9. Get global counts for locations and categories
 export const getGlobalCounts = query({
   args: {},
   handler: async (ctx) => {
@@ -254,7 +260,12 @@ export const getGlobalCounts = query({
 
     const allItems = await ctx.db
       .query("items")
-      .filter((q) => q.eq(q.field("userId"), userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("userId"), userId),
+          q.eq(q.field("deletedAt"), undefined),
+        ),
+      )
       .collect();
 
     const categoryCounts: Record<string, number> = {};
@@ -274,16 +285,23 @@ export const getGlobalCounts = query({
   },
 });
 
-// 11. Get all items flat for Risk Analysis
+// 10. Get all items flat for Risk Analysis
 export const getAllItemsFlat = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    return await ctx.db
+    const items = await ctx.db
       .query("items")
-      .filter((q) => q.eq(q.field("userId"), userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("userId"), userId),
+          q.eq(q.field("deletedAt"), undefined),
+        ),
+      )
       .collect();
+
+    return await Promise.all(items.map((item) => withPosterUrl(ctx, item)));
   },
 });
