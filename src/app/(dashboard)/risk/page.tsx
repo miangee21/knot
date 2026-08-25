@@ -120,7 +120,7 @@ export default function RiskPage() {
                 Risk Analysis
               </h1>
               {riskItems && riskItems.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 sm:mt-1.5 rounded-full bg-destructive/15 text-destructive dark:text-red-400 text-sm font-bold tracking-wide">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 sm:mt-1.5 rounded-full bg-destructive/10 text-destructive text-sm font-bold tracking-wide">
                   <AlertTriangle className="w-4 h-4" />
                   {riskItems.length} items with no backup
                 </span>

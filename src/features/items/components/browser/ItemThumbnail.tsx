@@ -89,8 +89,7 @@ export function ItemThumbnail({
       <div
         className="
           pointer-events-none absolute inset-0 opacity-[0.035]
-          bg-[linear-gradient(hsl(var(--foreground))_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground))_1px,transparent_1px)]
-          bg-size-[24px_24px]
+          bg-grid-pattern bg-size-[24px_24px]
         "
       />
 

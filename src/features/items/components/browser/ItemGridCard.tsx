@@ -69,7 +69,7 @@ export function ItemGridCard({
   const CardContent = () => (
     <div
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border/80 bg-card p-2.5 shadow-sm dark:bg-white/3 dark:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] transform-gpu transition-all duration-300 ease-out active:translate-y-0",
+        "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border/80 bg-card p-2.5 shadow-sm dark:bg-muted/10 dark:shadow-premium transform-gpu transition-all duration-300 ease-out active:translate-y-0",
         !isEditMode &&
           "hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.4)]",
       )}
@@ -78,7 +78,7 @@ export function ItemGridCard({
       <div className="relative aspect-3/4 w-full shrink-0 overflow-hidden rounded-xl bg-muted/40 ring-1 ring-inset ring-border/30">
         <div
           className={cn(
-            "pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-black/10 via-transparent to-white/5 opacity-0 transition-opacity duration-300",
+            "pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-foreground/10 via-transparent to-background/5 opacity-0 transition-opacity duration-300",
             !isEditMode && "group-hover:opacity-100",
           )}
         />

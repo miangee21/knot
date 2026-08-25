@@ -22,10 +22,10 @@ export function CapacityBar({
   // Dynamically assign colors from globals.css based on the level
   const colorClass =
     level === "high"
-      ? "bg-[hsl(var(--capacity-high))]"
+      ? "bg-capacity-high"
       : level === "medium"
-        ? "bg-[hsl(var(--capacity-medium))]"
-        : "bg-[hsl(var(--capacity-low))]";
+        ? "bg-capacity-medium"
+        : "bg-capacity-low";
 
   return (
     <div className="h-1.5 w-full bg-secondary/80 overflow-hidden rounded-full">

@@ -35,7 +35,7 @@ export function CategoryCard({
   const IconComponent = (LucideIcons as any)[category.icon] || Tag;
 
   return (
-    <div className="group flex items-center justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-white/3 dark:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] hover:border-primary/50 hover:-translate-y-1 transition-all duration-300">
+    <div className="group flex items-center justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-muted/10 dark:shadow-premium hover:border-primary/50 hover:-translate-y-1 transition-all duration-300">
       <div className="flex items-center gap-4 min-w-0">
         <div className="shrink-0 w-12 h-12 rounded-2xl bg-secondary/80 flex items-center justify-center border border-border/50 group-hover:bg-primary/10 group-hover:border-primary/30 transition-all">
           <IconComponent className="w-5 h-5 text-foreground group-hover:text-primary transition-colors" />

@@ -187,7 +187,7 @@ export function Navbar() {
                     });
                   }
                 }}
-                className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 focus:bg-red-500/10 rounded-xl cursor-pointer py-2 px-3 mt-1 font-semibold"
+                className="text-destructive focus:text-destructive focus:bg-destructive/30 rounded-xl cursor-pointer py-2 px-3 mt-1 font-semibold"
               >
                 <LogOut className="mr-3 h-4.5 w-4.5" />
                 <span className="text-[14px]">Log out</span>

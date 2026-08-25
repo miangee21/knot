@@ -153,7 +153,7 @@ export function SignupForm() {
         </Button>
 
         {/* Toggle Link */}
-        <div className="text-muted-foreground text-sm mt-3 pt-3 relative before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-[repeating-linear-gradient(90deg,hsl(var(--border))_0,hsl(var(--border))_8px,transparent_8px,transparent_14px)]">
+        <div className="text-muted-foreground text-sm mt-3 pt-3 relative before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-separator-dots">
           Already have an account?{" "}
           <Link
             href="/login"

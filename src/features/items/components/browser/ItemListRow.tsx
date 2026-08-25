@@ -70,7 +70,7 @@ export function ItemListRow({
         "group relative grid w-full items-stretch",
         "grid-cols-[auto_minmax(0,var(--name-width))_minmax(0,var(--range-width))_minmax(0,var(--size-width))_minmax(0,var(--locations-width))_auto]",
         "gap-3 sm:gap-4 rounded-2xl border border-border/80 bg-card px-3 py-2.5 sm:px-4 sm:py-3",
-        "shadow-sm dark:bg-white/3 dark:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] transform-gpu transition-all duration-300 ease-out",
+        "shadow-sm dark:bg-muted/10 dark:shadow-premium transform-gpu transition-all duration-300 ease-out",
         !isEditMode &&
           "hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.4)]",
       )}

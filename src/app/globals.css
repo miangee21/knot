@@ -29,6 +29,9 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+
+  /* Custom premium shadow for dark mode cards */
+  --shadow-premium: 0 8px 30px -12px rgba(0, 0, 0, 0.6);
 }
 
 @layer base {
@@ -94,7 +97,7 @@
     --accent: 217 32% 17%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62% 30%;
+    --destructive: 0 72.2% 50.6%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 217 32% 17%;
@@ -153,5 +156,22 @@
 
   .text-kind-os {
     color: hsl(var(--kind-os));
+  }
+
+  /* Custom pattern utilities to keep JSX clean */
+  .bg-separator-dots {
+    background-image: repeating-linear-gradient(
+      90deg,
+      hsl(var(--border)) 0,
+      hsl(var(--border)) 8px,
+      transparent 8px,
+      transparent 14px
+    );
+  }
+
+  .bg-grid-pattern {
+    background-image:
+      linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px);
   }
 }

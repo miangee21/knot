@@ -56,7 +56,7 @@ export function ItemPathField({ ancestors, itemName }: ItemPathFieldProps) {
             className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background/50 border border-border/50 text-muted-foreground transition-all hover:bg-background hover:text-foreground"
           >
             {copied ? (
-              <Check className="h-3 w-3 text-green-500" />
+              <Check className="h-3 w-3 text-primary" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
