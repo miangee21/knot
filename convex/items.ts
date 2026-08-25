@@ -14,6 +14,28 @@ export const generateUploadUrl = mutation({
   },
 });
 
+// SECURITY HELPER: Validate ownership and types of references
+async function validateReferences(ctx: any, userId: string, args: any) {
+  if (args.parentId) {
+    const parent = await ctx.db.get(args.parentId);
+    if (!parent || parent.userId !== userId)
+      throw new Error("Invalid parent ID");
+    if (!parent.isFolder) throw new Error("Parent must be a folder");
+  }
+  if (args.categoryId) {
+    const category = await ctx.db.get(args.categoryId);
+    if (!category || category.userId !== userId)
+      throw new Error("Invalid category ID");
+  }
+  if (args.locationIds && args.locationIds.length > 0) {
+    for (const locId of args.locationIds) {
+      const location = await ctx.db.get(locId);
+      if (!location || location.userId !== userId)
+        throw new Error("Invalid location ID");
+    }
+  }
+}
+
 // 1. Create an Item
 export const create = mutation({
   args: {
@@ -31,6 +53,9 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    // Block cross-user injection and verify folder type
+    await validateReferences(ctx, userId, args);
 
     return await ctx.db.insert("items", {
       userId,
@@ -70,6 +95,26 @@ export const update = mutation({
     const existing = await ctx.db.get(args.id);
     if (!existing || existing.userId !== userId) {
       throw new Error("Item not found or unauthorized");
+    }
+
+    // Block cross-user injection and verify folder type
+    await validateReferences(ctx, userId, args);
+
+    // CYCLE DETECTION: Prevent moving a folder into itself or its own subfolders
+    if (args.parentId && args.parentId !== existing.parentId) {
+      let currentParentId: Id<"items"> | null = args.parentId;
+      while (currentParentId) {
+        if (currentParentId === args.id) {
+          throw new Error(
+            "Folder Cycle Loop Detected: Cannot move a folder into itself.",
+          );
+        }
+        // Strictly cast the document to avoid implicit 'any' without actually using 'any'
+        const parentDoc = (await ctx.db.get(currentParentId)) as {
+          parentId?: Id<"items"> | null;
+        } | null;
+        currentParentId = parentDoc?.parentId || null;
+      }
     }
 
     await ctx.db.patch(args.id, {
@@ -144,9 +189,19 @@ export const getAncestors = query({
     if (!userId) return [];
 
     const ancestors: any[] = [];
+    const visited = new Set<string>(); // CYCLE HISTORY TRACKER
     let currentId = args.itemId as Id<"items"> | null;
 
     while (currentId) {
+      // Agar ye ID pehle visit ho chuki hai, iska matlab loop (cycle) ban gaya hai!
+      if (visited.has(currentId)) {
+        console.warn(
+          `Infinite loop detected and prevented for item cycle at: ${currentId}`,
+        );
+        break;
+      }
+      visited.add(currentId);
+
       const item = await ctx.db.get(currentId);
       if (!item || item.userId !== userId || item.deletedAt !== undefined)
         break;

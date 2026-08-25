@@ -50,12 +50,18 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
 
   const folders = children?.filter((c) => c.isFolder) || [];
 
+  // SECURITY: Check if current destination is the item itself or inside it
+  const isDescendant = ancestors?.some((anc: any) => anc._id === item?._id);
+  const isSelf = currentFolderId === item?._id;
+  const isCurrentParent = currentFolderId === item?.parentId;
+  const isInvalidDestination = isSelf || isDescendant || isCurrentParent;
+
   const handleMove = async () => {
     if (!item) return;
 
-    // Prevent moving a folder into itself
-    if (item.isFolder && currentFolderId === item._id) {
-      toast.error("You cannot move a folder into itself!");
+    // Prevent moving a folder into itself or its children
+    if (item.isFolder && (isSelf || isDescendant)) {
+      toast.error("You cannot move a folder into itself or its subfolders!");
       return;
     }
 
@@ -172,7 +178,7 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
           </Button>
           <Button
             onClick={handleMove}
-            disabled={isMoving || currentFolderId === item?.parentId}
+            disabled={isMoving || isInvalidDestination}
             className="rounded-full h-10 px-6 font-bold shadow-md bg-primary hover:bg-primary/90"
           >
             {isMoving ? (

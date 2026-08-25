@@ -47,9 +47,17 @@ export const moveToBin = mutation({
       await softDeleteDescendants(itemId);
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
-      if (catId) await ctx.db.patch(catId, { deletedAt: now });
+      if (!catId) return;
+      const category = await ctx.db.get(catId);
+      if (!category || category.userId !== userId)
+        throw new Error("Unauthorized");
+      await ctx.db.patch(catId, { deletedAt: now });
     } else if (args.type === "location") {
       const locId = ctx.db.normalizeId("locations", args.id);
+      if (!locId) return;
+      const location = await ctx.db.get(locId);
+      if (!location || location.userId !== userId)
+        throw new Error("Unauthorized");
       if (locId) {
         // STRICT BLOCK: Check if any active items are using this location
         const activeItems = await ctx.db
@@ -165,10 +173,18 @@ export const restore = mutation({
       await restoreDescendants(itemId);
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
-      if (catId) await ctx.db.patch(catId, { deletedAt: undefined });
+      if (!catId) return;
+      const category = await ctx.db.get(catId);
+      if (!category || category.userId !== userId)
+        throw new Error("Unauthorized");
+      await ctx.db.patch(catId, { deletedAt: undefined });
     } else if (args.type === "location") {
       const locId = ctx.db.normalizeId("locations", args.id);
-      if (locId) await ctx.db.patch(locId, { deletedAt: undefined });
+      if (!locId) return;
+      const location = await ctx.db.get(locId);
+      if (!location || location.userId !== userId)
+        throw new Error("Unauthorized");
+      await ctx.db.patch(locId, { deletedAt: undefined });
     }
   },
 });
@@ -200,21 +216,28 @@ export const hardDelete = mutation({
       }
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
-      if (catId) {
-        // Remove category reference from items
-        const linkedItems = await ctx.db
-          .query("items")
-          .withIndex("by_user", (q) => q.eq("userId", userId))
-          .filter((q) => q.eq(q.field("categoryId"), catId))
-          .collect();
-        for (const i of linkedItems) {
-          await ctx.db.patch(i._id, { categoryId: undefined });
-        }
-        await ctx.db.delete(catId);
+      if (!catId) return;
+      const category = await ctx.db.get(catId);
+      if (!category || category.userId !== userId)
+        throw new Error("Unauthorized");
+
+      // Remove category reference from items
+      const linkedItems = await ctx.db
+        .query("items")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .filter((q) => q.eq(q.field("categoryId"), catId))
+        .collect();
+      for (const i of linkedItems) {
+        await ctx.db.patch(i._id, { categoryId: undefined });
       }
+      await ctx.db.delete(catId);
     } else if (args.type === "location") {
       const locId = ctx.db.normalizeId("locations", args.id);
-      if (locId) await ctx.db.delete(locId);
+      if (!locId) return;
+      const location = await ctx.db.get(locId);
+      if (!location || location.userId !== userId)
+        throw new Error("Unauthorized");
+      await ctx.db.delete(locId);
     }
   },
 });
