@@ -1,14 +1,7 @@
 //src/features/trash/components/TrashItemCards.tsx
 "use client";
 
-import {
-  RefreshCcw,
-  Trash2,
-  MoreVertical,
-  Info,
-  Edit2,
-  Folder,
-} from "lucide-react";
+import { RefreshCcw, Trash2, MoreVertical, Info } from "lucide-react";
 import { ItemThumbnail } from "@/features/items/components/browser/ItemThumbnail";
 import {
   DropdownMenu,
@@ -85,18 +78,6 @@ export function TrashItemCards({
           className="rounded-lg cursor-pointer py-2 px-2.5 font-medium hover:bg-muted"
         >
           <Info className="w-4 h-4 mr-2.5 text-muted-foreground" /> Details
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled
-          className="rounded-lg py-2 px-2.5 font-medium opacity-50"
-        >
-          <Edit2 className="w-4 h-4 mr-2.5 text-muted-foreground" /> Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled
-          className="rounded-lg py-2 px-2.5 font-medium opacity-50"
-        >
-          <Folder className="w-4 h-4 mr-2.5 text-muted-foreground" /> Move
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
