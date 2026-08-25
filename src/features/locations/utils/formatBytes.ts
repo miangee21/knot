@@ -2,12 +2,20 @@
 export function bytesToDisplay(bytes?: number): string {
   if (bytes === undefined || bytes === null) return "Unknown";
   if (bytes === 0) return "0 B";
+  if (bytes < 0) return "Invalid"; // Handle negative safely
 
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  // Prevent out of bounds if size exceeds PB
+  const validIndex = Math.min(i, sizes.length - 1);
+
+  return (
+    parseFloat((bytes / Math.pow(k, validIndex)).toFixed(1)) +
+    " " +
+    sizes[validIndex]
+  );
 }
 
 export function capacityLevel(

@@ -15,7 +15,13 @@ export function RangeInput({
   endValue,
   onChange,
 }: RangeInputProps) {
-  const [isRange, setIsRange] = React.useState(!!(startValue || endValue));
+  const [isRange, setIsRange] = React.useState(
+    startValue !== undefined || endValue !== undefined,
+  );
+
+  React.useEffect(() => {
+    setIsRange(startValue !== undefined || endValue !== undefined);
+  }, [startValue, endValue]);
 
   const handleToggle = (checked: boolean) => {
     setIsRange(checked);
@@ -37,27 +43,40 @@ export function RangeInput({
         <div className="flex flex-row items-center gap-1.5 animate-in fade-in duration-300">
           <input
             type="number"
+            min="0"
             placeholder="Start"
-            value={startValue || ""}
-            onChange={(e) =>
-              onChange(
-                e.target.value ? Number(e.target.value) : undefined,
-                endValue,
-              )
-            }
+            value={startValue ?? ""}
+            onChange={(e) => {
+              const val =
+                e.target.value !== ""
+                  ? Math.max(0, Number(e.target.value))
+                  : undefined;
+
+              if (
+                val !== undefined &&
+                endValue !== undefined &&
+                val > endValue
+              ) {
+                onChange(val, val);
+              } else {
+                onChange(val, endValue);
+              }
+            }}
             className="w-16 h-8 bg-card border border-border/80 rounded-md px-2 text-sm text-center outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
           />
           <span className="text-muted-foreground font-medium">-</span>
           <input
             type="number"
+            min={startValue ?? 0}
             placeholder="End"
-            value={endValue || ""}
-            onChange={(e) =>
-              onChange(
-                startValue,
-                e.target.value ? Number(e.target.value) : undefined,
-              )
-            }
+            value={endValue ?? ""}
+            onChange={(e) => {
+              const val =
+                e.target.value !== ""
+                  ? Math.max(0, Number(e.target.value))
+                  : undefined;
+              onChange(startValue, val);
+            }}
             className="w-16 h-8 bg-card border border-border/80 rounded-md px-2 text-sm text-center outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
           />
         </div>

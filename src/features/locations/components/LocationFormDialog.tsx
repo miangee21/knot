@@ -61,8 +61,8 @@ export function LocationFormDialog({
 
   const currentIcon = watch("icon");
   const currentKind = watch("kind");
-  const watchTotal = watch("totalBytes") || 0;
-  const watchUsed = watch("usedBytes") || 0;
+  const watchTotal = watch("totalBytes") ?? 0;
+  const watchUsed = watch("usedBytes") ?? 0;
 
   React.useEffect(() => {
     if (isOpen) {
@@ -88,17 +88,19 @@ export function LocationFormDialog({
   const handleFormSubmit = async (data: LocationFormData) => {
     const formattedData = {
       ...data,
-      totalBytes: data.totalBytes ? data.totalBytes * GB_TO_BYTES : undefined,
-      usedBytes: data.usedBytes ? data.usedBytes * GB_TO_BYTES : undefined,
+      totalBytes:
+        data.totalBytes !== undefined
+          ? data.totalBytes * GB_TO_BYTES
+          : undefined,
+      usedBytes:
+        data.usedBytes !== undefined ? data.usedBytes * GB_TO_BYTES : undefined,
     };
     await onSubmit(formattedData);
     onClose();
   };
 
   const freeSpace =
-    watchTotal && watchUsed && watchTotal >= watchUsed
-      ? (watchTotal - watchUsed).toFixed(1)
-      : "0";
+    watchTotal >= watchUsed ? (watchTotal - watchUsed).toFixed(1) : "0";
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

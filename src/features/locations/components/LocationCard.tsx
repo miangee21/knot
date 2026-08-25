@@ -68,14 +68,13 @@ export function LocationCard({
 
   // Calculate Free Space
   const freeBytes =
-    location.totalBytes &&
-    location.usedBytes &&
+    location.totalBytes !== undefined &&
+    location.usedBytes !== undefined &&
     location.totalBytes >= location.usedBytes
       ? location.totalBytes - location.usedBytes
       : 0;
-  const freeSpaceText = location.totalBytes
-    ? bytesToDisplay(freeBytes)
-    : "Unknown";
+  const freeSpaceText =
+    location.totalBytes !== undefined ? bytesToDisplay(freeBytes) : "Unknown";
 
   return (
     <div className="group flex flex-col justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-muted/10 dark:shadow-premium hover:border-primary/50 hover:-translate-y-1 transition-all duration-300">

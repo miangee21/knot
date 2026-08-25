@@ -140,6 +140,9 @@ export default function BrowsePage() {
           headers: { "Content-Type": data.poster.type },
           body: data.poster,
         });
+        if (!result.ok) {
+          throw new Error(`Failed to upload image. Status: ${result.status}`);
+        }
         const { storageId } = await result.json();
         posterStorageId = storageId;
       } else if (

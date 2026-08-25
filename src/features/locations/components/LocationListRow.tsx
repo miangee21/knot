@@ -87,8 +87,8 @@ export function LocationListRow({
         <div className="absolute bottom-full right-0 mb-2 w-max opacity-0 pointer-events-none group-hover/storage:opacity-100 transition-opacity bg-background text-foreground text-xs font-medium py-1.5 px-3 rounded-lg shadow-2xl border border-border z-10">
           Free Space:{" "}
           <span className="text-primary font-bold">
-            {location.totalBytes &&
-            location.usedBytes &&
+            {location.totalBytes !== undefined &&
+            location.usedBytes !== undefined &&
             location.totalBytes >= location.usedBytes
               ? bytesToDisplay(location.totalBytes - location.usedBytes)
               : "Unknown"}
