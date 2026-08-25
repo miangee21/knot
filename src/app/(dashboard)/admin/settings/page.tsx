@@ -68,7 +68,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Settings Card */}
-      <div className="bg-card border border-border/60 rounded-4xl p-6 sm:p-8 shadow-xl shadow-black/5">
+      <div className="bg-card border border-border/60 rounded-4xl p-6 sm:p-8 shadow-xl shadow-primary/5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="space-y-1.5">
             <h3 className="font-semibold text-lg flex items-center gap-2 text-foreground">
