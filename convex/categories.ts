@@ -53,29 +53,3 @@ export const updateCategory = mutation({
     await ctx.db.patch(id, updates);
   },
 });
-
-// Delete category & clear its reference from items
-export const deleteCategory = mutation({
-  args: { id: v.id("categories") },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const existing = await ctx.db.get(args.id);
-    if (!existing || existing.userId !== userId) {
-      throw new Error("Category not found or unauthorized");
-    }
-
-    const linkedItems = await ctx.db
-      .query("items")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) => q.eq(q.field("categoryId"), args.id))
-      .collect();
-
-    for (const item of linkedItems) {
-      await ctx.db.patch(item._id, { categoryId: undefined });
-    }
-
-    await ctx.db.delete(args.id);
-  },
-});

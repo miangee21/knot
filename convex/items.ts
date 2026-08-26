@@ -144,21 +144,6 @@ async function withPosterUrl(ctx: any, item: any) {
   };
 }
 
-// 4. Get a specific Item
-export const getById = query({
-  args: { id: v.id("items") },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const item = await ctx.db.get(args.id);
-    if (item?.userId === userId && item.deletedAt === undefined) {
-      return await withPosterUrl(ctx, item);
-    }
-    return null;
-  },
-});
-
 // 5. Get Children of a specific Parent
 export const getChildren = query({
   args: { parentId: v.union(v.id("items"), v.null()) },

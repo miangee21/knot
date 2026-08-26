@@ -69,18 +69,3 @@ export const updateLocation = mutation({
     await ctx.db.patch(id, updates);
   },
 });
-
-export const deleteLocation = mutation({
-  args: { id: v.id("locations") },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const existing = await ctx.db.get(args.id);
-    if (!existing || existing.userId !== userId) {
-      throw new Error("Location not found or unauthorized");
-    }
-
-    await ctx.db.delete(args.id);
-  },
-});
