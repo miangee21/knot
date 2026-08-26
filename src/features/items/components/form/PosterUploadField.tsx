@@ -69,7 +69,7 @@ export function PosterUploadField({
             alt="Poster preview"
             className="w-full h-full object-cover rounded-3xl transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
+          <div className="absolute inset-0 bg-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
             <button
               type="button"
               onClick={() => inputRef.current?.click()}

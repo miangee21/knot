@@ -136,7 +136,7 @@ export function Navbar() {
 
             <DropdownMenuContent
               align="end"
-              className="w-70 translate-x-1 rounded-3xl border-border bg-card text-card-foreground shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] p-1.5"
+              className="w-70 translate-x-1 rounded-3xl border-border bg-card text-card-foreground shadow-soft p-1.5"
             >
               {/* Header Section: Avatar + Name/Email side by side */}
               <div className="flex items-center gap-3 px-2 py-2 text-sm font-normal">

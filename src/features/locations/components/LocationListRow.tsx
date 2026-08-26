@@ -120,7 +120,7 @@ export function LocationListRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-40 rounded-2xl p-1.5 border-border bg-card shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)]"
+            className="w-40 rounded-2xl p-1.5 border-border bg-card shadow-soft"
           >
             <DropdownMenuItem
               onClick={() => onEdit(location)}

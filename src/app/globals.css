@@ -30,8 +30,14 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  /* Custom premium shadow for dark mode cards */
+  /* Custom UI Colors */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Custom Shadows */
   --shadow-premium: 0 8px 30px -12px rgba(0, 0, 0, 0.6);
+  --shadow-dropdown: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
+  --shadow-float: 0 12px 40px -12px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
 }
 
 @layer base {

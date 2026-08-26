@@ -72,7 +72,7 @@ export function ItemListRow({
         "gap-3 sm:gap-4 rounded-2xl border border-border/80 bg-card px-3 py-2.5 sm:px-4 sm:py-3",
         "shadow-sm dark:bg-muted/10 dark:shadow-premium transform-gpu transition-all duration-300 ease-out",
         !isEditMode &&
-          "hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.4)]",
+          "hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:hover:shadow-float",
       )}
       style={
         {
