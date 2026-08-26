@@ -207,6 +207,12 @@ export const hardDelete = mutation({
       const itemId = ctx.db.normalizeId("items", args.id);
       if (!itemId) return;
       const item = await ctx.db.get(itemId);
+
+      // SECURITY FIX: Only allow hard delete if the item is already in trash
+      if (!item || item.userId !== userId || item.deletedAt === undefined) {
+        throw new Error("Item must be moved to bin before hard deletion.");
+      }
+
       if (item && item.userId === userId) {
         // CASCADE HARD-DELETE FOR DESCENDANTS
         const hardDeleteDescendants = async (parentId: Id<"items">) => {
@@ -237,8 +243,14 @@ export const hardDelete = mutation({
       const catId = ctx.db.normalizeId("categories", args.id);
       if (!catId) return;
       const category = await ctx.db.get(catId);
-      if (!category || category.userId !== userId)
-        throw new Error("Unauthorized");
+
+      // SECURITY FIX
+      if (
+        !category ||
+        category.userId !== userId ||
+        category.deletedAt === undefined
+      )
+        throw new Error("Category must be moved to bin before hard deletion.");
 
       // Remove category reference from items
       const linkedItems = await ctx.db
@@ -254,8 +266,15 @@ export const hardDelete = mutation({
       const locId = ctx.db.normalizeId("locations", args.id);
       if (!locId) return;
       const location = await ctx.db.get(locId);
-      if (!location || location.userId !== userId)
-        throw new Error("Unauthorized");
+
+      // SECURITY FIX
+      if (
+        !location ||
+        location.userId !== userId ||
+        location.deletedAt === undefined
+      )
+        throw new Error("Location must be moved to bin before hard deletion.");
+
       await ctx.db.delete(locId);
     }
   },

@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Plus, PackageOpen } from "lucide-react";
 // Shared Components
 import { Button } from "@/shared/components/ui/button";
@@ -31,7 +31,6 @@ import { useMutation, useQuery } from "convex/react";
 export default function BrowsePage() {
   // Navigation & Route State
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const locationFilterId = searchParams.get("locationFilterId");
   const segments = params.segments as string[] | undefined;
@@ -90,11 +89,26 @@ export default function BrowsePage() {
     api.items.search,
     searchTerm ? { query: searchTerm } : "skip",
   );
-  const isSearching = searchTerm.length > 0 && searchResults === undefined;
+
+  // Global Location Query (Fetches all items to filter globally)
+  const allItemsFlat = useQuery(
+    api.items.getAllItemsFlat,
+    locationFilterId && !searchTerm ? {} : "skip",
+  );
+
+  const isSearching =
+    (searchTerm.length > 0 && searchResults === undefined) ||
+    (locationFilterId && !searchTerm && allItemsFlat === undefined);
 
   // Search Filter Logic (Global vs Local)
   const filteredItems = React.useMemo(() => {
-    let baseItems = searchTerm ? searchResults || [] : items || [];
+    let baseItems = items || [];
+
+    if (searchTerm) {
+      baseItems = searchResults || [];
+    } else if (locationFilterId) {
+      baseItems = allItemsFlat || [];
+    }
 
     // Smart Dependency Filter: Show only items using this specific location
     if (locationFilterId) {
@@ -104,7 +118,7 @@ export default function BrowsePage() {
     }
 
     return baseItems;
-  }, [items, searchTerm, searchResults, locationFilterId]);
+  }, [items, searchTerm, searchResults, locationFilterId, allItemsFlat]);
 
   // Pagination Logic
   const totalItems = filteredItems.length;

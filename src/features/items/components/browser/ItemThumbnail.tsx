@@ -102,7 +102,7 @@ export function ItemThumbnail({
           bg-background/65
           shadow-sm
           backdrop-blur-sm
-          ring-1 ring-inset ring-white/40
+          ring-1 ring-inset ring-border/40
           transition-all duration-300
           group-hover:scale-105
           group-hover:border-primary/20

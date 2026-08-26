@@ -320,6 +320,16 @@ export const deleteStorage = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    const linkedItem = await ctx.db
+      .query("items")
+      .filter((q) => q.eq(q.field("posterStorageId"), args.storageId))
+      .first();
+
+    if (linkedItem && linkedItem.userId !== userId) {
+      throw new Error("Unauthorized: Storage file belongs to another user.");
+    }
+
     await ctx.storage.delete(args.storageId);
   },
 });

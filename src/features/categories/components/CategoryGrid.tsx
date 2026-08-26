@@ -21,9 +21,6 @@ export function CategoryGrid({
 
   const totalItems = categories.length;
   const isAll = itemsPerPage === "all";
-  const totalPages = isAll
-    ? 1
-    : Math.ceil(totalItems / (itemsPerPage as number));
 
   const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
   const endIndex = isAll
