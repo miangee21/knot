@@ -3,6 +3,7 @@
 
 import * as React from "react";
 import { Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipTrigger,
@@ -26,10 +27,16 @@ export function ItemPathField({ ancestors, itemName }: ItemPathFieldProps) {
       ? `${pathArray[0]} > ... > ${pathArray[pathArray.length - 2]} > ${pathArray[pathArray.length - 1]}`
       : fullPath;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(fullPath);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(fullPath);
+      setCopied(true);
+      toast.success("Path copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error("Failed to copy path.");
+      console.error("Clipboard error:", error);
+    }
   };
 
   return (

@@ -171,6 +171,7 @@ export default function LocationsPage() {
             {view === "grid" ? (
               <LocationGrid
                 locations={currentLocations}
+                locationCounts={locationCounts}
                 onEdit={openEditDialog}
                 onDelete={confirmDelete}
               />
@@ -180,6 +181,7 @@ export default function LocationsPage() {
                   <LocationListRow
                     key={loc._id}
                     location={loc}
+                    itemCount={locationCounts[loc._id] || 0}
                     onEdit={openEditDialog}
                     onDelete={confirmDelete}
                   />

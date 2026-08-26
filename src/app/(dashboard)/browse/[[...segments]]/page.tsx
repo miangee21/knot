@@ -9,6 +9,7 @@ import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { Pagination } from "@/shared/components/Pagination";
 import { ItemFormData } from "@/features/items/types";
+import { toast } from "sonner";
 // Browser UI Components
 import { BrowseHeader } from "@/features/items/components/browser/BrowseHeader";
 import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
@@ -69,6 +70,7 @@ export default function BrowsePage() {
   const { handleUpdate } = useUpdateItem();
   const { handleDelete } = useDeleteItem();
   const generateUploadUrl = useMutation(api.items.generateUploadUrl);
+  const deleteStorage = useMutation(api.items.deleteStorage);
 
   // Form & Modals State
   const [isFormOpen, setIsFormOpen] = React.useState(false);
@@ -130,6 +132,8 @@ export default function BrowsePage() {
 
   const onFormSubmit = async (data: ItemFormData) => {
     setIsSubmitting(true);
+    let newlyUploadedStorageId: Id<"_storage"> | undefined = undefined;
+
     try {
       let posterStorageId = undefined;
       // 1. Native Convex Storage Upload
@@ -145,6 +149,7 @@ export default function BrowsePage() {
         }
         const { storageId } = await result.json();
         posterStorageId = storageId;
+        newlyUploadedStorageId = storageId; // Track for rollback
       } else if (
         typeof data.poster === "string" &&
         editingItem?.posterStorageId
@@ -158,12 +163,20 @@ export default function BrowsePage() {
         posterStorageId,
       };
 
-      if (editingItem) await handleUpdate(editingItem._id, payload);
-      else await handleCreate(payload);
+      try {
+        if (editingItem) await handleUpdate(editingItem._id, payload);
+        else await handleCreate(payload);
+      } catch (dbError) {
+        if (newlyUploadedStorageId) {
+          await deleteStorage({ storageId: newlyUploadedStorageId });
+        }
+        throw dbError;
+      }
 
       setIsFormOpen(false);
+      toast.success(editingItem ? "Item updated!" : "Item created!");
     } catch (error) {
-      console.error("Submission failed:", error);
+      toast.error("Failed to save item. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

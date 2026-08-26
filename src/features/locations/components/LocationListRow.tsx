@@ -15,8 +15,6 @@ import {
 import { CapacityBar } from "./CapacityBar";
 import { bytesToDisplay } from "../utils/formatBytes";
 import { LocationDoc } from "./LocationCard";
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +25,7 @@ import {
 
 interface LocationListRowProps {
   location: LocationDoc;
+  itemCount: number;
   onEdit: (location: LocationDoc) => void;
   onDelete: (id: string) => void;
 }
@@ -48,12 +47,10 @@ const iconMap: Record<string, React.ElementType> = {
 
 export function LocationListRow({
   location,
+  itemCount,
   onEdit,
   onDelete,
 }: LocationListRowProps) {
-  const counts = useQuery(api.items.getGlobalCounts);
-  const itemCount = counts?.locationCounts?.[location._id] || 0;
-
   const IconComponent = iconMap[location.icon] || Folder;
   const kindData = kindConfig[location.kind];
 

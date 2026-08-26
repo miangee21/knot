@@ -313,3 +313,13 @@ export const getAllItemsFlat = query({
     return await Promise.all(items.map((item) => withPosterUrl(ctx, item)));
   },
 });
+
+// Delete explicitly uploaded storage files (Rollback for failed DB operations)
+export const deleteStorage = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    await ctx.storage.delete(args.storageId);
+  },
+});

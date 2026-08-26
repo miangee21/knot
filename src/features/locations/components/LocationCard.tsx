@@ -14,8 +14,6 @@ import {
 } from "lucide-react";
 import { CapacityBar } from "./CapacityBar";
 import { bytesToDisplay } from "../utils/formatBytes";
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +34,7 @@ export interface LocationDoc {
 
 interface LocationCardProps {
   location: LocationDoc;
+  itemCount: number;
   onEdit: (location: LocationDoc) => void;
   onDelete: (id: string) => void;
 }
@@ -57,12 +56,10 @@ const iconMap: Record<string, React.ElementType> = {
 
 export function LocationCard({
   location,
+  itemCount,
   onEdit,
   onDelete,
 }: LocationCardProps) {
-  const counts = useQuery(api.items.getGlobalCounts);
-  const itemCount = counts?.locationCounts?.[location._id] || 0;
-
   const IconComponent = iconMap[location.icon] || Folder;
   const kindData = kindConfig[location.kind];
 
