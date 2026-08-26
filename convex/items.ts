@@ -14,24 +14,32 @@ export const generateUploadUrl = mutation({
   },
 });
 
-// SECURITY HELPER: Validate ownership and types of references
+// SECURITY HELPER: Validate ownership, types, and active status of references
 async function validateReferences(ctx: any, userId: string, args: any) {
   if (args.parentId) {
     const parent = await ctx.db.get(args.parentId);
-    if (!parent || parent.userId !== userId)
-      throw new Error("Invalid parent ID");
+    if (!parent || parent.userId !== userId || parent.deletedAt !== undefined)
+      throw new Error("Invalid or deleted parent folder");
     if (!parent.isFolder) throw new Error("Parent must be a folder");
   }
   if (args.categoryId) {
     const category = await ctx.db.get(args.categoryId);
-    if (!category || category.userId !== userId)
-      throw new Error("Invalid category ID");
+    if (
+      !category ||
+      category.userId !== userId ||
+      category.deletedAt !== undefined
+    )
+      throw new Error("Invalid or deleted category");
   }
   if (args.locationIds && args.locationIds.length > 0) {
     for (const locId of args.locationIds) {
       const location = await ctx.db.get(locId);
-      if (!location || location.userId !== userId)
-        throw new Error("Invalid location ID");
+      if (
+        !location ||
+        location.userId !== userId ||
+        location.deletedAt !== undefined
+      )
+        throw new Error("Invalid or deleted location");
     }
   }
 }
@@ -99,6 +107,12 @@ export const update = mutation({
 
     // Block cross-user injection and verify folder type
     await validateReferences(ctx, userId, args);
+
+    // BUG FIX: Delete old orphaned poster if it's being replaced or completely removed
+    const newPosterId = args.posterStorageId ?? undefined;
+    if (existing.posterStorageId && existing.posterStorageId !== newPosterId) {
+      await ctx.storage.delete(existing.posterStorageId);
+    }
 
     // CYCLE DETECTION: Prevent moving a folder into itself or its own subfolders
     if (args.parentId && args.parentId !== existing.parentId) {

@@ -75,7 +75,17 @@ export function RangeInput({
                 e.target.value !== ""
                   ? Math.max(0, Number(e.target.value))
                   : undefined;
-              onChange(startValue, val);
+
+              // BUG FIX: Prevent End from being smaller than Start
+              if (
+                val !== undefined &&
+                startValue !== undefined &&
+                val < startValue
+              ) {
+                onChange(val, val);
+              } else {
+                onChange(startValue, val);
+              }
             }}
             className="w-16 h-8 bg-card border border-border/80 rounded-md px-2 text-sm text-center outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
           />

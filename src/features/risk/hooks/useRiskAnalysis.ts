@@ -6,6 +6,7 @@ import { Id } from "../../../../convex/_generated/dataModel";
 
 export function useRiskAnalysis() {
   const allItems = useQuery(api.items.getAllItemsFlat);
+  const activeLocations = useQuery(api.locations.getLocations); // Fetch active locations
 
   const riskItems = useMemo(() => {
     if (!allItems) return undefined;
@@ -30,21 +31,27 @@ export function useRiskAnalysis() {
     const vulnerableItems = allItems
       .filter((item) => !item.isFolder) // Only check actual files
       .map((item) => {
-        // Since we explicitly set locations on creation now, we just use the item's own array!
-        const effectiveLocations = item.locationIds || [];
+        // Only count locations that are still ACTIVE (not in trash)
+        const validLocationIds = activeLocations
+          ? activeLocations.map((l) => l._id)
+          : [];
+        const effectiveLocations = (item.locationIds || []).filter(
+          (locId: Id<"locations">) => validLocationIds.includes(locId),
+        );
+
         return {
           ...item,
           effectiveLocations,
           riskPath: getRiskPath(item._id), // Inject path for the UI
         };
       })
-      .filter((item) => item.effectiveLocations.length === 1); // EXACTLY 1 location = At Risk
+      .filter((item) => item.effectiveLocations.length === 1); // EXACTLY 1 active location = At Risk
 
     return vulnerableItems;
-  }, [allItems]);
+  }, [allItems, activeLocations]);
 
   return {
     riskItems,
-    isLoading: allItems === undefined,
+    isLoading: allItems === undefined || activeLocations === undefined,
   };
 }
