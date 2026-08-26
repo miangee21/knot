@@ -54,7 +54,7 @@ export default defineSchema({
     deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
   })
     .index("by_user", ["userId"])
-    .index("by_parent", ["parentId"])
+    .index("by_parent", ["parentId", "userId"])
     .searchIndex("search_name", {
       searchField: "name",
       filterFields: ["userId"],

@@ -31,8 +31,9 @@ export const moveToBin = mutation({
       const softDeleteDescendants = async (parentId: Id<"items">) => {
         const children = await ctx.db
           .query("items")
-          .withIndex("by_parent", (q) => q.eq("parentId", parentId))
-          .filter((q) => q.eq(q.field("userId"), userId))
+          .withIndex("by_parent", (q) =>
+            q.eq("parentId", parentId).eq("userId", userId),
+          )
           .collect();
 
         for (const child of children) {
@@ -157,8 +158,9 @@ export const restore = mutation({
       const restoreDescendants = async (parentId: Id<"items">) => {
         const children = await ctx.db
           .query("items")
-          .withIndex("by_parent", (q) => q.eq("parentId", parentId))
-          .filter((q) => q.eq(q.field("userId"), userId))
+          .withIndex("by_parent", (q) =>
+            q.eq("parentId", parentId).eq("userId", userId),
+          )
           .collect();
 
         for (const child of children) {
@@ -218,8 +220,9 @@ export const hardDelete = mutation({
         const hardDeleteDescendants = async (parentId: Id<"items">) => {
           const children = await ctx.db
             .query("items")
-            .withIndex("by_parent", (q) => q.eq("parentId", parentId))
-            .filter((q) => q.eq(q.field("userId"), userId))
+            .withIndex("by_parent", (q) =>
+              q.eq("parentId", parentId).eq("userId", userId),
+            )
             .collect();
 
           for (const child of children) {

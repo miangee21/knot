@@ -27,6 +27,7 @@ import { useLocations } from "@/features/locations/hooks/useLocations";
 import { Id } from "../../../../../convex/_generated/dataModel";
 import { api } from "../../../../../convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 export default function BrowsePage() {
   // Navigation & Route State
@@ -81,30 +82,32 @@ export default function BrowsePage() {
 
   // Search & Pagination State
   const [searchTerm, setSearchTerm] = React.useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
   // Global Search Query (Searches whole DB when searchTerm exists)
   const searchResults = useQuery(
     api.items.search,
-    searchTerm ? { query: searchTerm } : "skip",
+    debouncedSearchTerm ? { query: debouncedSearchTerm } : "skip",
   );
 
   // Global Location Query (Fetches all items to filter globally)
   const allItemsFlat = useQuery(
     api.items.getAllItemsFlat,
-    locationFilterId && !searchTerm ? {} : "skip",
+    locationFilterId && !debouncedSearchTerm ? {} : "skip",
   );
 
   const isSearching =
-    (searchTerm.length > 0 && searchResults === undefined) ||
-    (locationFilterId && !searchTerm && allItemsFlat === undefined);
+    (debouncedSearchTerm.length > 0 && searchResults === undefined) ||
+    searchTerm !== debouncedSearchTerm ||
+    (locationFilterId && !debouncedSearchTerm && allItemsFlat === undefined);
 
   // Search Filter Logic (Global vs Local)
   const filteredItems = React.useMemo(() => {
     let baseItems = items || [];
 
-    if (searchTerm) {
+    if (debouncedSearchTerm) {
       baseItems = searchResults || [];
     } else if (locationFilterId) {
       baseItems = allItemsFlat || [];
@@ -132,7 +135,7 @@ export default function BrowsePage() {
   // Reset page on search
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [debouncedSearchTerm]);
 
   // Handlers
   const openNewDialog = () => {

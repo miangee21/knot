@@ -42,6 +42,16 @@ async function validateReferences(ctx: any, userId: string, args: any) {
         throw new Error("Invalid or deleted location");
     }
   }
+
+  // SECURITY FIX: Server-side file size validation (5MB max)
+  if (args.posterStorageId) {
+    const file = await ctx.storage.get(args.posterStorageId);
+    if (file && file.size > 5 * 1024 * 1024) {
+      // 5MB in bytes
+      await ctx.storage.delete(args.posterStorageId);
+      throw new Error("Server Error: Image size exceeds the 5MB limit.");
+    }
+  }
 }
 
 // 1. Create an Item
@@ -167,13 +177,10 @@ export const getChildren = query({
 
     const items = await ctx.db
       .query("items")
-      .withIndex("by_parent", (q) => q.eq("parentId", args.parentId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("userId"), userId),
-          q.eq(q.field("deletedAt"), undefined),
-        ),
+      .withIndex("by_parent", (q) =>
+        q.eq("parentId", args.parentId).eq("userId", userId),
       )
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
     return await Promise.all(items.map((item) => withPosterUrl(ctx, item)));
@@ -243,13 +250,10 @@ export const getFolderCounts = query({
 
     const children = await ctx.db
       .query("items")
-      .withIndex("by_parent", (q) => q.eq("parentId", args.parentId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("userId"), userId),
-          q.eq(q.field("deletedAt"), undefined),
-        ),
+      .withIndex("by_parent", (q) =>
+        q.eq("parentId", args.parentId).eq("userId", userId),
       )
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
     return {
@@ -268,12 +272,8 @@ export const getGlobalCounts = query({
 
     const allItems = await ctx.db
       .query("items")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("userId"), userId),
-          q.eq(q.field("deletedAt"), undefined),
-        ),
-      )
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
     const categoryCounts: Record<string, number> = {};
@@ -302,12 +302,8 @@ export const getAllItemsFlat = query({
 
     const items = await ctx.db
       .query("items")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("userId"), userId),
-          q.eq(q.field("deletedAt"), undefined),
-        ),
-      )
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
     return await Promise.all(items.map((item) => withPosterUrl(ctx, item)));
@@ -326,10 +322,12 @@ export const deleteStorage = mutation({
       .filter((q) => q.eq(q.field("posterStorageId"), args.storageId))
       .first();
 
-    if (linkedItem && linkedItem.userId !== userId) {
-      throw new Error("Unauthorized: Storage file belongs to another user.");
+    if (linkedItem) {
+      if (linkedItem.userId !== userId) {
+        throw new Error("Unauthorized: Storage file belongs to another user.");
+      }
+    } else {
     }
-
     await ctx.storage.delete(args.storageId);
   },
 });
