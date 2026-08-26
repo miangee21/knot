@@ -43,11 +43,12 @@ export function LocationMultiSelect({
     }
   };
 
-  // Determine what to show in the live badges below
-  const isInheriting = selectedIds.length === 0;
-  const displayIds = isInheriting ? inheritedIds : selectedIds;
-  const displayLocations = allLocations.filter((loc) =>
-    displayIds.includes(loc._id),
+  // Separate inherited vs explicitly selected locations
+  const inheritedLocations = allLocations.filter((loc) =>
+    inheritedIds.includes(loc._id),
+  );
+  const explicitLocations = allLocations.filter(
+    (loc) => selectedIds.includes(loc._id) && !inheritedIds.includes(loc._id),
   );
 
   return (
@@ -77,23 +78,38 @@ export function LocationMultiSelect({
               <CommandList className="custom-scrollbar">
                 <CommandEmpty>No location found.</CommandEmpty>
                 <CommandGroup>
-                  {allLocations.map((location) => (
-                    <CommandItem
-                      key={location._id}
-                      onSelect={() => toggleLocation(location._id)}
-                      className="cursor-pointer rounded-xl my-1 hover:bg-muted font-medium"
-                    >
-                      <Check
+                  {allLocations.map((location) => {
+                    const isInherited = inheritedIds.includes(location._id);
+                    return (
+                      <CommandItem
+                        key={location._id}
+                        onSelect={() => {
+                          if (!isInherited) toggleLocation(location._id);
+                        }}
                         className={cn(
-                          "mr-2 h-4 w-4 text-primary",
-                          selectedIds.includes(location._id)
-                            ? "opacity-100"
-                            : "opacity-0",
+                          "rounded-xl my-1 font-medium",
+                          isInherited
+                            ? "opacity-50 cursor-not-allowed bg-muted/30"
+                            : "cursor-pointer hover:bg-muted",
                         )}
-                      />
-                      {location.name}
-                    </CommandItem>
-                  ))}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4 text-primary",
+                            selectedIds.includes(location._id) || isInherited
+                              ? "opacity-100"
+                              : "opacity-0",
+                          )}
+                        />
+                        {location.name}
+                        {isInherited && (
+                          <span className="ml-auto text-xs italic text-muted-foreground">
+                            Locked
+                          </span>
+                        )}
+                      </CommandItem>
+                    );
+                  })}
                 </CommandGroup>
               </CommandList>
             </Command>
@@ -101,27 +117,32 @@ export function LocationMultiSelect({
         </Popover>
 
         {/* Live Resolved Badges Inline */}
-        {displayLocations.length > 0 && (
+        {(inheritedLocations.length > 0 || explicitLocations.length > 0) && (
           <div className="flex flex-wrap items-center gap-2">
-            {displayLocations.map((loc) => (
+            {/* 1. Show locked inherited locations always */}
+            {inheritedLocations.map((loc) => (
               <div
-                key={loc._id}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all",
-                  isInheriting
-                    ? "bg-muted/50 text-muted-foreground border border-border/50" // Muted for inherited
-                    : "bg-primary/10 text-primary border border-primary/20", // Solid for explicit
-                )}
+                key={`inherited-${loc._id}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-muted/50 text-muted-foreground border border-border/50"
+              >
+                <MapPin className="w-3 h-3 opacity-50" />
+                {loc.name}
+                <span className="text-[10px] lowercase italic opacity-60 ml-0.5">
+                  (inherited)
+                </span>
+              </div>
+            ))}
+
+            {/* 2. Show explicitly selected locations */}
+            {explicitLocations.map((loc) => (
+              <div
+                key={`explicit-${loc._id}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary/10 text-primary border border-primary/20"
               >
                 <MapPin className="w-3 h-3" />
                 {loc.name}
               </div>
             ))}
-            {isInheriting && (
-              <span className="text-[10px] text-muted-foreground italic ml-1 self-center">
-                (Inherited)
-              </span>
-            )}
           </div>
         )}
       </div>

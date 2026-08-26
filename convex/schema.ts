@@ -38,7 +38,7 @@ export default defineSchema({
     parentId: v.union(v.id("items"), v.null()), // null = root level, never undefined
     name: v.string(),
 
-    categoryId: v.optional(v.id("categories")), // unset → inherit from parent
+    categoryId: v.optional(v.id("categories")), // Explicitly set (No automatic inheritance)
     locationIds: v.array(v.id("locations")),
 
     // Sequential range instead of one row per file

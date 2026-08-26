@@ -19,7 +19,7 @@ export function SizeInput({ valueBytes, onChange }: SizeInputProps) {
   const [unit, setUnit] = React.useState<"MB" | "GB" | "TB">(initialUnit);
 
   const displayValue = React.useMemo(() => {
-    if (!valueBytes) return "";
+    if (valueBytes === undefined || valueBytes === null) return "";
     if (unit === "MB") return valueBytes / (1024 * 1024);
     if (unit === "GB") return valueBytes / (1024 * 1024 * 1024);
     if (unit === "TB") return valueBytes / (1024 * 1024 * 1024 * 1024);
@@ -27,11 +27,13 @@ export function SizeInput({ valueBytes, onChange }: SizeInputProps) {
   }, [valueBytes, unit]);
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value ? Number(e.target.value) : undefined;
-    if (!val) {
+    if (e.target.value === "") {
       onChange(undefined);
       return;
     }
+
+    const val = Number(e.target.value);
+    if (val < 0) return; // Prevent negative numbers
 
     let bytes = val;
     if (unit === "MB") bytes = val * 1024 * 1024;
@@ -58,6 +60,7 @@ export function SizeInput({ valueBytes, onChange }: SizeInputProps) {
       <input
         type="number"
         step="any"
+        min="0"
         placeholder="e.g. 1.5"
         value={displayValue}
         onChange={handleNumberChange}

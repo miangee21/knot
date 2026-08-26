@@ -208,11 +208,30 @@ export const hardDelete = mutation({
       if (!itemId) return;
       const item = await ctx.db.get(itemId);
       if (item && item.userId === userId) {
-        // Delete image from Convex Storage if it exists
+        // CASCADE HARD-DELETE FOR DESCENDANTS
+        const hardDeleteDescendants = async (parentId: Id<"items">) => {
+          const children = await ctx.db
+            .query("items")
+            .withIndex("by_parent", (q) => q.eq("parentId", parentId))
+            .filter((q) => q.eq(q.field("userId"), userId))
+            .collect();
+
+          for (const child of children) {
+            if (child.posterStorageId) {
+              await ctx.storage.delete(child.posterStorageId);
+            }
+            await ctx.db.delete(child._id);
+            await hardDeleteDescendants(child._id); // Recursive call
+          }
+        };
+
+        // Delete parent image from Convex Storage if it exists
         if (item.posterStorageId) {
           await ctx.storage.delete(item.posterStorageId);
         }
+
         await ctx.db.delete(itemId);
+        await hardDeleteDescendants(itemId);
       }
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
