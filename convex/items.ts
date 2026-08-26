@@ -45,9 +45,8 @@ async function validateReferences(ctx: any, userId: string, args: any) {
 
   // SECURITY FIX: Server-side file size validation (5MB max)
   if (args.posterStorageId) {
-    const file = await ctx.storage.get(args.posterStorageId);
+    const file = await ctx.db.system.get(args.posterStorageId);
     if (file && file.size > 5 * 1024 * 1024) {
-      // 5MB in bytes
       await ctx.storage.delete(args.posterStorageId);
       throw new Error("Server Error: Image size exceeds the 5MB limit.");
     }
