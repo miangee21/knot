@@ -29,8 +29,8 @@ export default function NotFound() {
             Dead End Reached.
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto">
-            The folder or file you are looking for doesn't exist in the index,
-            or it might have been moved.
+            The folder or file you are looking for doesn&apos;t exist in the
+            index, or it might have been moved.
           </p>
         </div>
 

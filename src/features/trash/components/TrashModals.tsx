@@ -69,8 +69,8 @@ export function TrashModals({
               Restore Item
             </DialogTitle>
             <div className="text-sm text-muted-foreground mt-2 leading-relaxed">
-              Are you sure you want to restore "{itemToRestore?.name}"? It will
-              be moved back to its original location.
+              Are you sure you want to restore &quot;{itemToRestore?.name}
+              &quot;? It will be moved back to its original location.
             </div>
           </DialogHeader>
           <div className="mt-6 flex justify-end gap-3">
