@@ -133,10 +133,12 @@ export default function BrowsePage() {
     : Math.min(startIndex + (itemsPerPage as number), totalItems);
   const currentItems = filteredItems.slice(startIndex, endIndex);
 
-  // Reset page on search
-  React.useEffect(() => {
+  // Prevent effect loops by caching the previous search term
+  const prevSearchRef = React.useRef(debouncedSearchTerm);
+  if (prevSearchRef.current !== debouncedSearchTerm) {
     setCurrentPage(1);
-  }, [debouncedSearchTerm]);
+    prevSearchRef.current = debouncedSearchTerm;
+  }
 
   // Handlers
   const openNewDialog = () => {

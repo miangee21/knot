@@ -22,7 +22,7 @@ export function PosterUploadField({
   // Handle local preview without uploading
   React.useEffect(() => {
     if (!value) {
-      setPreviewUrl(null);
+      if (previewUrl !== null) setPreviewUrl(null);
       return;
     }
 

@@ -15,16 +15,13 @@ export function RangeInput({
   endValue,
   onChange,
 }: RangeInputProps) {
-  const [isRange, setIsRange] = React.useState(
-    startValue !== undefined || endValue !== undefined,
-  );
+  const [manualToggle, setManualToggle] = React.useState(false);
 
-  React.useEffect(() => {
-    setIsRange(startValue !== undefined || endValue !== undefined);
-  }, [startValue, endValue]);
+  const hasValues = startValue !== undefined || endValue !== undefined;
+  const isRange = hasValues || manualToggle;
 
   const handleToggle = (checked: boolean) => {
-    setIsRange(checked);
+    setManualToggle(checked);
     if (!checked) {
       onChange(undefined, undefined);
     }

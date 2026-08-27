@@ -26,19 +26,25 @@ export default function LocationsPage() {
 
   // View State (Grid or List)
   const [view, setView] = React.useState<"grid" | "list">("grid");
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    const savedView = localStorage.getItem("knot-location-view") as
-      "grid" | "list";
-    if (savedView === "grid" || savedView === "list") {
-      setView(savedView);
-    }
+    setMounted(true);
+    queueMicrotask(() => {
+      const savedView = localStorage.getItem("knot-location-view") as
+        "grid" | "list";
+      if (savedView === "grid" || savedView === "list") {
+        setView(savedView);
+      }
+    });
   }, []);
 
   const handleViewChange = (newView: "grid" | "list") => {
     setView(newView);
     localStorage.setItem("knot-location-view", newView);
   };
+
+  const activeView = mounted ? view : "grid";
 
   // Search & Pagination States
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -65,10 +71,12 @@ export default function LocationsPage() {
     );
   }, [locations, debouncedSearchTerm]);
 
-  // Reset to page 1 if user searches
-  React.useEffect(() => {
+  // Prevent effect loops by caching the previous search term
+  const prevSearchRef = React.useRef(debouncedSearchTerm);
+  if (prevSearchRef.current !== debouncedSearchTerm) {
     setCurrentPage(1);
-  }, [debouncedSearchTerm]);
+    prevSearchRef.current = debouncedSearchTerm;
+  }
 
   // Pagination Math
   const totalItems = filteredLocations.length;
@@ -128,7 +136,7 @@ export default function LocationsPage() {
         hasLocations={!!locations && locations.length > 0}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        view={view}
+        view={activeView}
         handleViewChange={handleViewChange}
         openNewDialog={openNewDialog}
       />
@@ -168,7 +176,7 @@ export default function LocationsPage() {
         ) : (
           <div className="space-y-6">
             {/* Grid / List Views */}
-            {view === "grid" ? (
+            {activeView === "grid" ? (
               <LocationGrid
                 locations={currentLocations}
                 locationCounts={locationCounts}

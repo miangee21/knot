@@ -91,9 +91,24 @@ export default function TrashPage() {
     );
   }, [activeTabData, debouncedSearch]);
 
-  React.useEffect(() => {
+  // Safe state sync during render (React 18 recommended way to avoid effect cascades)
+  const [prevDeps, setPrevDeps] = React.useState({
+    search: debouncedSearch,
+    tab: activeTab,
+    folder: currentFolderId,
+  });
+  if (
+    prevDeps.search !== debouncedSearch ||
+    prevDeps.tab !== activeTab ||
+    prevDeps.folder !== currentFolderId
+  ) {
     setCurrentPage(1);
-  }, [debouncedSearch, activeTab, currentFolderId]);
+    setPrevDeps({
+      search: debouncedSearch,
+      tab: activeTab,
+      folder: currentFolderId,
+    });
+  }
 
   const totalTrashCount =
     (trashData?.items?.length || 0) +

@@ -67,7 +67,7 @@ export function ItemGridCard({
           .join(", ")
       : "";
 
-  const CardContent = () => (
+  const renderCardContent = () => (
     <div
       className={cn(
         "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border/80 bg-card p-2.5 shadow-sm dark:bg-muted/10 dark:shadow-premium transform-gpu transition-all duration-300 ease-out active:translate-y-0",
@@ -214,14 +214,14 @@ export function ItemGridCard({
   if (isFolder) {
     return (
       <Link href={href} className="block h-full outline-none">
-        <CardContent />
+        {renderCardContent()}
       </Link>
     );
   }
 
   return (
     <div className="block h-full outline-none cursor-default">
-      <CardContent />
+      {renderCardContent()}
     </div>
   );
 }

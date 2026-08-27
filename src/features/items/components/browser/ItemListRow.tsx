@@ -64,7 +64,7 @@ export function ItemListRow({
           .join(", ")
       : "";
 
-  const RowContent = () => (
+  const renderRowContent = () => (
     <div
       data-resizable-row
       className={cn(
@@ -134,14 +134,14 @@ export function ItemListRow({
   if (isFolder) {
     return (
       <Link href={href} className="block h-full outline-none">
-        <RowContent />
+        {renderRowContent()}
       </Link>
     );
   }
 
   return (
     <div className="block h-full cursor-default outline-none">
-      <RowContent />
+      {renderRowContent()}
     </div>
   );
 }

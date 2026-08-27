@@ -44,7 +44,7 @@ export function TrashItemCards({
     if (isFolder) onFolderClick(item._id);
   };
 
-  const Actions = () => (
+  const renderActions = () => (
     <div className="flex items-center gap-1.5 shrink-0">
       <button
         onClick={(e) => {
@@ -69,7 +69,7 @@ export function TrashItemCards({
     </div>
   );
 
-  const ThreeDotsMenu = () => (
+  const renderThreeDotsMenu = () => (
     <DropdownMenu>
       <DropdownMenuTrigger
         onClick={(e) => e.stopPropagation()}
@@ -107,7 +107,7 @@ export function TrashItemCards({
             className="w-full h-full"
           />
           <div className="absolute top-2 right-2 z-20">
-            <ThreeDotsMenu />
+            {renderThreeDotsMenu()}
           </div>
         </div>
         <div className="px-1 pt-2.5 pb-1 flex flex-col min-w-0">
@@ -120,7 +120,7 @@ export function TrashItemCards({
                 ? new Date(item.deletedAt).toLocaleDateString()
                 : "Unknown"}
             </p>
-            <Actions />
+            {renderActions()}
           </div>
         </div>
       </div>
@@ -154,10 +154,8 @@ export function TrashItemCards({
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Actions />
-        <div className="ml-1">
-          <ThreeDotsMenu />
-        </div>
+        {renderActions()}
+        <div className="ml-1">{renderThreeDotsMenu()}</div>
       </div>
     </div>
   );

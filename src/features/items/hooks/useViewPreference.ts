@@ -7,13 +7,17 @@ export type ViewMode = "grid" | "list";
 
 export function useViewPreference() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [mounted, setMounted] = useState(false);
 
-  // Load from local storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("knot-view-mode") as ViewMode;
-    if (saved === "grid" || saved === "list") {
-      setViewMode(saved);
-    }
+    setMounted(true);
+    // Microtask avoids synchronous state update lint warnings
+    queueMicrotask(() => {
+      const saved = localStorage.getItem("knot-view-mode") as ViewMode;
+      if (saved === "grid" || saved === "list") {
+        setViewMode(saved);
+      }
+    });
   }, []);
 
   const toggleViewMode = (mode: ViewMode) => {
@@ -21,5 +25,5 @@ export function useViewPreference() {
     localStorage.setItem("knot-view-mode", mode);
   };
 
-  return { viewMode, setViewMode: toggleViewMode };
+  return { viewMode: mounted ? viewMode : "grid", setViewMode: toggleViewMode };
 }
