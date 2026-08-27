@@ -7,12 +7,14 @@ import { SearchBar } from "@/shared/components/SearchBar";
 import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
 import { cn } from "@/shared/lib/utils";
 
+type TrashType = "item" | "category" | "location";
+
 interface TrashHeaderProps {
   totalTrashCount: number;
-  activeTab: any;
-  setActiveTab: (tab: any) => void;
-  tabConfig: any[];
-  trashData: any;
+  activeTab: TrashType;
+  setActiveTab: (tab: TrashType) => void;
+  tabConfig: { id: TrashType; label: string; key: string }[];
+  trashData: { items: any[]; categories: any[]; locations: any[] } | undefined;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   viewMode: "grid" | "list";

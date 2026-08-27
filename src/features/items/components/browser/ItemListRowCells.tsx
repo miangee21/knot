@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/components/ui/tooltip";
+import { ItemDoc } from "../../types";
 import { bytesToDisplay } from "@/features/locations/utils/formatBytes";
 
 // Smart Resizer Component
@@ -49,7 +50,7 @@ export function NameCell({
   isEditMode,
   onResizeStart,
 }: {
-  item: any;
+  item: ItemDoc;
   isEditMode: boolean;
   onResizeStart: any;
 }) {
@@ -119,7 +120,7 @@ export function SizeCell({
   isEditMode,
   onResizeStart,
 }: {
-  item: any;
+  item: ItemDoc;
   isEditMode: boolean;
   onResizeStart: any;
 }) {
@@ -153,7 +154,7 @@ export function LocationsCell({
   isEditMode,
   onResizeStart,
 }: {
-  item: any;
+  item: ItemDoc;
   locationNames: string;
   isEditMode: boolean;
   onResizeStart: any;

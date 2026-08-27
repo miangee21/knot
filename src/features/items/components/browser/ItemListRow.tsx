@@ -16,11 +16,12 @@ import {
   SizeCell,
   LocationsCell,
 } from "./ItemListRowCells";
+import { ItemDoc, LocationDoc } from "../../types";
 
 interface ItemListRowProps {
-  item: any;
+  item: ItemDoc;
   currentPath: string;
-  allLocations: any[];
+  allLocations: LocationDoc[];
   columnWidths: {
     name: number;
     range: number;

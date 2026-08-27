@@ -22,6 +22,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
+import { CategoryDoc, LocationDoc, ItemDoc } from "@/features/items/types";
+
+// Helper Type for Trash Items
+type TrashType = "item" | "category" | "location";
+type TrashItemBase = {
+  type: TrashType;
+  name: string;
+  _id: string;
+  deletedAt: number;
+};
+type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 
 const LOCATION_ICONS: Record<string, React.ElementType> = {
   HardDrive,
@@ -37,8 +48,21 @@ const kindConfig = {
   os: { label: "OS Drive", className: "text-kind-os bg-kind-os/10" },
 };
 
-export function TrashCategoryCard({ item, onRestore, onDelete }: any) {
-  const IconComponent = item.icon ? (LucideIcons as any)[item.icon] : Tag;
+export function TrashCategoryCard({
+  item,
+  onRestore,
+  onDelete,
+}: {
+  item: TrashedItem;
+  onRestore: (item: TrashedItem) => void;
+  onDelete: (item: TrashedItem) => void;
+}) {
+  const categoryItem = item as unknown as CategoryDoc & TrashItemBase;
+  const IconComponent = categoryItem.icon
+    ? (LucideIcons[
+        categoryItem.icon as keyof typeof LucideIcons
+      ] as React.ElementType)
+    : Tag;
 
   return (
     <div className="group flex items-center justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-muted/10 dark:shadow-premium hover:border-primary/50 transition-all duration-300">
@@ -82,10 +106,21 @@ export function TrashCategoryCard({ item, onRestore, onDelete }: any) {
   );
 }
 
-export function TrashLocationCard({ item, onRestore, onDelete }: any) {
-  const IconComponent = item.icon ? LOCATION_ICONS[item.icon] : Folder;
+export function TrashLocationCard({
+  item,
+  onRestore,
+  onDelete,
+}: {
+  item: TrashedItem;
+  onRestore: (item: TrashedItem) => void;
+  onDelete: (item: TrashedItem) => void;
+}) {
+  const locationItem = item as unknown as LocationDoc & TrashItemBase; // Temporary explicit cast for location-specific fields
+  const IconComponent = locationItem.icon
+    ? LOCATION_ICONS[locationItem.icon]
+    : Folder;
   const kindData =
-    kindConfig[item.kind as keyof typeof kindConfig] || kindConfig.hard;
+    kindConfig[locationItem.kind as keyof typeof kindConfig] || kindConfig.hard;
 
   return (
     <div className="group flex flex-col justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-muted/10 dark:shadow-premium hover:border-primary/50 transition-all duration-300">
@@ -136,21 +171,35 @@ export function TrashLocationCard({ item, onRestore, onDelete }: any) {
         <div className="flex items-center justify-between text-xs">
           <span className="font-medium text-muted-foreground">Storage</span>
           <span className="font-semibold text-foreground">
-            {bytesToDisplay(item.usedBytes)}{" "}
+            {bytesToDisplay(locationItem.usedBytes ?? 0)}{" "}
             <span className="font-normal opacity-50">/</span>{" "}
-            {bytesToDisplay(item.totalBytes)}
+            {bytesToDisplay(locationItem.totalBytes ?? 0)}
           </span>
         </div>
-        <CapacityBar usedBytes={item.usedBytes} totalBytes={item.totalBytes} />
+        <CapacityBar
+          usedBytes={locationItem.usedBytes ?? 0}
+          totalBytes={locationItem.totalBytes ?? 0}
+        />
       </div>
     </div>
   );
 }
 
-export function TrashLocationListRow({ item, onRestore, onDelete }: any) {
-  const IconComponent = item.icon ? LOCATION_ICONS[item.icon] : Folder;
+export function TrashLocationListRow({
+  item,
+  onRestore,
+  onDelete,
+}: {
+  item: TrashedItem;
+  onRestore: (item: TrashedItem) => void;
+  onDelete: (item: TrashedItem) => void;
+}) {
+  const locationItem = item as unknown as LocationDoc & TrashItemBase;
+  const IconComponent = locationItem.icon
+    ? LOCATION_ICONS[locationItem.icon]
+    : Folder;
   const kindData =
-    kindConfig[item.kind as keyof typeof kindConfig] || kindConfig.hard;
+    kindConfig[locationItem.kind as keyof typeof kindConfig] || kindConfig.hard;
 
   return (
     <div className="group flex items-center justify-between p-3 sm:p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-muted/10 dark:shadow-premium hover:border-primary/50 transition-all duration-300 gap-4">
@@ -172,11 +221,14 @@ export function TrashLocationListRow({ item, onRestore, onDelete }: any) {
       {/* Middle: Capacity */}
       <div className="hidden md:flex flex-col items-end w-48 shrink-0 space-y-1.5 group/storage relative">
         <span className="text-[12px] font-semibold text-muted-foreground">
-          {bytesToDisplay(item.usedBytes)}{" "}
+          {bytesToDisplay(locationItem.usedBytes ?? 0)}{" "}
           <span className="font-normal opacity-50">/</span>{" "}
-          {bytesToDisplay(item.totalBytes)}
+          {bytesToDisplay(locationItem.totalBytes ?? 0)}
         </span>
-        <CapacityBar usedBytes={item.usedBytes} totalBytes={item.totalBytes} />
+        <CapacityBar
+          usedBytes={locationItem.usedBytes ?? 0}
+          totalBytes={locationItem.totalBytes ?? 0}
+        />
       </div>
 
       {/* Right: Actions */}

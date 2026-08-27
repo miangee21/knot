@@ -15,9 +15,10 @@ import { api } from "../../../../../convex/_generated/api";
 import { useUpdateItem } from "../../hooks/useUpdateItem";
 import { toast } from "sonner";
 import { Id } from "../../../../../convex/_generated/dataModel";
+import { ItemDoc } from "../../types";
 
 interface MoveItemDialogProps {
-  item: any | null;
+  item: ItemDoc | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -48,10 +49,11 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
     currentFolderId ? { itemId: currentFolderId } : "skip",
   );
 
-  const folders = children?.filter((c) => c.isFolder) || [];
+  const folders =
+    children?.filter((c): c is ItemDoc => c !== null && c.isFolder) || [];
 
   // SECURITY: Check if current destination is the item itself or inside it
-  const isDescendant = ancestors?.some((anc: any) => anc._id === item?._id);
+  const isDescendant = ancestors?.some((anc: ItemDoc) => anc._id === item?._id);
   const isSelf = currentFolderId === item?._id;
   const isCurrentParent = currentFolderId === item?.parentId;
   const isInvalidDestination = isSelf || isDescendant || isCurrentParent;
@@ -68,7 +70,7 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
     setIsMoving(true);
     try {
       // Pass all required existing fields along with the NEW parentId
-      await handleUpdate(item._id, {
+      await handleUpdate(item._id as Id<"items">, {
         name: item.name,
         sizeBytes: item.sizeBytes,
         locationIds: item.locationIds || [],
@@ -147,7 +149,7 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
               {folders.map((folder) => (
                 <button
                   key={folder._id}
-                  onClick={() => setCurrentFolderId(folder._id)}
+                  onClick={() => setCurrentFolderId(folder._id as Id<"items">)}
                   disabled={folder._id === item?._id}
                   className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/60 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                 >

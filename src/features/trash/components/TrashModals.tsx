@@ -10,6 +10,21 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 
+interface TrashModalsProps {
+  itemToDelete: { name: string } | null;
+  setItemToDelete: (val: any) => void;
+  onConfirmDelete: () => Promise<void>;
+  isDeleting: boolean;
+  itemToRestore: { name: string } | null;
+  setItemToRestore: (val: any) => void;
+  onConfirmRestore: () => Promise<void>;
+  isRestoring: boolean;
+  isEmptyBinOpen: boolean;
+  setIsEmptyBinOpen: (val: boolean) => void;
+  onConfirmEmptyBin: () => Promise<void>;
+  isEmptying: boolean;
+}
+
 export function TrashModals({
   itemToDelete,
   setItemToDelete,
@@ -23,7 +38,7 @@ export function TrashModals({
   setIsEmptyBinOpen,
   onConfirmEmptyBin,
   isEmptying,
-}: any) {
+}: TrashModalsProps) {
   return (
     <>
       {/* Permanent Delete Modal */}

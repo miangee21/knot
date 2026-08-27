@@ -16,14 +16,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
+import { ItemDoc } from "../../types";
 
 interface ItemListRowActionsProps {
-  item: any;
+  item: ItemDoc;
   isEditMode: boolean;
-  onDetailsClick: (item: any) => void;
-  onEditClick: (item: any) => void;
-  onDeleteClick: (item: any) => void;
-  onMoveClick: (item: any) => void;
+  onDetailsClick: (item: ItemDoc) => void;
+  onEditClick: (item: ItemDoc) => void;
+  onDeleteClick: (item: ItemDoc) => void;
+  onMoveClick: (item: ItemDoc) => void;
 }
 
 export function ItemListRowActions({

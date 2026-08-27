@@ -9,13 +9,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
+import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
+
+type TrashType = "item" | "category" | "location";
+type TrashItemBase = {
+  type: TrashType;
+  name: string;
+  _id: string;
+  deletedAt: number;
+};
+type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 
 interface TrashItemCardProps {
-  item: any;
-  onRestore: (item: any) => void;
-  onDelete: (item: any) => void;
+  item: TrashedItem;
+  onRestore: (item: TrashedItem) => void;
+  onDelete: (item: TrashedItem) => void;
   onFolderClick: (id: string) => void;
-  onDetailsClick: (item: any) => void;
+  onDetailsClick: (item: ItemDoc) => void; // Using ItemDoc for detail modal compatibility
   viewMode: "grid" | "list";
 }
 
@@ -27,7 +37,8 @@ export function TrashItemCards({
   onDetailsClick,
   viewMode,
 }: TrashItemCardProps) {
-  const isFolder = item.isFolder;
+  const itemDoc = item as unknown as ItemDoc;
+  const isFolder = itemDoc.isFolder;
 
   const handleCardClick = () => {
     if (isFolder) onFolderClick(item._id);
@@ -73,7 +84,7 @@ export function TrashItemCards({
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            onDetailsClick(item);
+            onDetailsClick(item as unknown as ItemDoc);
           }}
           className="rounded-lg cursor-pointer py-2 px-2.5 font-medium hover:bg-muted"
         >
@@ -91,7 +102,7 @@ export function TrashItemCards({
       >
         <div className="relative aspect-3/4 w-full shrink-0 overflow-hidden rounded-xl bg-muted/40 ring-1 ring-inset ring-border/30">
           <ItemThumbnail
-            posterUrl={item.posterUrl}
+            posterUrl={itemDoc.posterUrl}
             isFolder={isFolder}
             className="w-full h-full"
           />
@@ -125,7 +136,7 @@ export function TrashItemCards({
       <div className="flex items-center gap-4 min-w-0 flex-1">
         <div className="relative h-12 w-10 sm:w-12 shrink-0 overflow-hidden rounded-xl bg-muted/40 ring-1 ring-inset ring-border/40">
           <ItemThumbnail
-            posterUrl={item.posterUrl}
+            posterUrl={itemDoc.posterUrl}
             isFolder={isFolder}
             className="w-full h-full"
           />

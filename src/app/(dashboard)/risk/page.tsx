@@ -18,6 +18,8 @@ import { useViewPreference } from "@/features/items/hooks/useViewPreference";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { useItemAncestors } from "@/features/items/hooks/useItemAncestors";
+import { ItemDoc } from "@/features/items/types";
+import { Id } from "../../../../convex/_generated/dataModel";
 
 export default function RiskPage() {
   const { riskItems, isLoading } = useRiskAnalysis();
@@ -43,11 +45,13 @@ export default function RiskPage() {
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
   // Detail & Move Modal State
-  const [detailItem, setDetailItem] = React.useState<any | null>(null);
-  const [movingItem, setMovingItem] = React.useState<any | null>(null);
+  const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
+  const [movingItem, setMovingItem] = React.useState<ItemDoc | null>(null);
 
   // Fetch ancestors dynamically for the currently selected detail item
-  const { ancestors } = useItemAncestors(detailItem?.parentId ?? undefined);
+  const { ancestors } = useItemAncestors(
+    detailItem?.parentId ? (detailItem.parentId as Id<"items">) : undefined,
+  );
 
   // Handle Mutually Exclusive Filters
   const handleCategoryChange = (catId: string) => {
@@ -78,10 +82,11 @@ export default function RiskPage() {
     if (!riskItems) return [];
 
     return riskItems.filter((item) => {
+      if (!item) return false;
       // 1. Search Filter
       const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.riskPath.toLowerCase().includes(searchTerm.toLowerCase());
+        (item.riskPath || "").toLowerCase().includes(searchTerm.toLowerCase());
 
       // 2. Category Filter (Strict exact match)
       const matchesCategory = selectedCategory

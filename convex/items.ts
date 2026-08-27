@@ -1,8 +1,9 @@
 //convex/items.ts
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "./_generated/dataModel";
+import { Id, Doc } from "./_generated/dataModel";
+import { ItemDoc } from "../src/features/items/types";
 
 // Generate Upload URL for Convex Native Storage
 export const generateUploadUrl = mutation({
@@ -15,15 +16,24 @@ export const generateUploadUrl = mutation({
 });
 
 // SECURITY HELPER: Validate ownership, types, and active status of references
-async function validateReferences(ctx: any, userId: string, args: any) {
+async function validateReferences(
+  ctx: MutationCtx,
+  userId: string,
+  args: {
+    parentId?: string | null;
+    categoryId?: string | null;
+    locationIds?: string[];
+    posterStorageId?: string | null;
+  },
+) {
   if (args.parentId) {
-    const parent = await ctx.db.get(args.parentId);
+    const parent = await ctx.db.get(args.parentId as Id<"items">);
     if (!parent || parent.userId !== userId || parent.deletedAt !== undefined)
       throw new Error("Invalid or deleted parent folder");
     if (!parent.isFolder) throw new Error("Parent must be a folder");
   }
   if (args.categoryId) {
-    const category = await ctx.db.get(args.categoryId);
+    const category = await ctx.db.get(args.categoryId as Id<"categories">);
     if (
       !category ||
       category.userId !== userId ||
@@ -33,7 +43,7 @@ async function validateReferences(ctx: any, userId: string, args: any) {
   }
   if (args.locationIds && args.locationIds.length > 0) {
     for (const locId of args.locationIds) {
-      const location = await ctx.db.get(locId);
+      const location = await ctx.db.get(locId as Id<"locations">);
       if (
         !location ||
         location.userId !== userId ||
@@ -45,9 +55,11 @@ async function validateReferences(ctx: any, userId: string, args: any) {
 
   // SECURITY FIX: Server-side file size validation (5MB max)
   if (args.posterStorageId) {
-    const file = await ctx.db.system.get(args.posterStorageId);
+    const file = await ctx.db.system.get(
+      args.posterStorageId as Id<"_storage">,
+    );
     if (file && file.size > 5 * 1024 * 1024) {
-      await ctx.storage.delete(args.posterStorageId);
+      await ctx.storage.delete(args.posterStorageId as Id<"_storage">);
       throw new Error("Server Error: Image size exceeds the 5MB limit.");
     }
   }
@@ -157,14 +169,17 @@ export const update = mutation({
 });
 
 // Helper function to resolve poster URL on the fly
-async function withPosterUrl(ctx: any, item: any) {
-  if (!item) return item;
+async function withPosterUrl(
+  ctx: QueryCtx | MutationCtx,
+  item: Doc<"items">,
+): Promise<ItemDoc | null> {
+  if (!item) return null;
   return {
     ...item,
     posterUrl: item.posterStorageId
-      ? await ctx.storage.getUrl(item.posterStorageId)
+      ? ((await ctx.storage.getUrl(item.posterStorageId)) ?? undefined)
       : undefined,
-  };
+  } as unknown as ItemDoc; // Cast to ItemDoc to satisfy frontend types safely
 }
 
 // 5. Get Children of a specific Parent
@@ -193,12 +208,11 @@ export const getAncestors = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    const ancestors: any[] = [];
+    const ancestors: ItemDoc[] = [];
     const visited = new Set<string>(); // CYCLE HISTORY TRACKER
     let currentId = args.itemId as Id<"items"> | null;
 
     while (currentId) {
-      // Agar ye ID pehle visit ho chuki hai, iska matlab loop (cycle) ban gaya hai!
       if (visited.has(currentId)) {
         console.warn(
           `Infinite loop detected and prevented for item cycle at: ${currentId}`,
@@ -211,7 +225,10 @@ export const getAncestors = query({
       if (!item || item.userId !== userId || item.deletedAt !== undefined)
         break;
 
-      ancestors.push(await withPosterUrl(ctx, item));
+      const resolvedItem = await withPosterUrl(ctx, item);
+      if (resolvedItem) {
+        ancestors.push(resolvedItem);
+      }
       currentId = item.parentId;
     }
 

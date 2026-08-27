@@ -11,6 +11,16 @@ import {
   TrashLocationCard,
   TrashLocationListRow,
 } from "./TrashAssetCards";
+import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
+
+type TrashType = "item" | "category" | "location";
+type TrashItemBase = {
+  type: TrashType;
+  name: string;
+  _id: string;
+  deletedAt: number;
+};
+type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 
 interface TrashContentAreaProps {
   totalTrashCount: number;
@@ -20,16 +30,16 @@ interface TrashContentAreaProps {
   viewMode: "grid" | "list";
   searchTerm: string;
   setSearchTerm: (val: string) => void;
-  currentItems: any[];
+  currentItems: TrashedItem[];
   totalItems: number;
   itemsPerPage: number | "all";
   currentPage: number;
   setCurrentPage: (page: number) => void;
   setItemsPerPage: (val: number | "all") => void;
-  setItemToRestore: (item: any) => void;
-  setItemToDelete: (item: any) => void;
+  setItemToRestore: (item: TrashedItem) => void;
+  setItemToDelete: (item: TrashedItem) => void;
   setCurrentFolderId: (id: string | null) => void;
-  setDetailItem: (item: any) => void;
+  setDetailItem: (item: ItemDoc) => void;
 }
 
 export function TrashContentArea({

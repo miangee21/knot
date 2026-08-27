@@ -31,15 +31,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
+import { ItemDoc, LocationDoc } from "../../types";
 
 interface ItemGridCardProps {
-  item: any;
+  item: ItemDoc;
   currentPath: string;
-  allLocations: any[];
-  onDetailsClick: (item: any) => void;
-  onEditClick: (item: any) => void;
-  onDeleteClick: (item: any) => void;
-  onMoveClick: (item: any) => void;
+  allLocations: LocationDoc[];
+  onDetailsClick: (item: ItemDoc) => void;
+  onEditClick: (item: ItemDoc) => void;
+  onDeleteClick: (item: ItemDoc) => void;
+  onMoveClick: (item: ItemDoc) => void;
 }
 
 export function ItemGridCard({

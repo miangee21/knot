@@ -32,7 +32,10 @@ export function CategoryCard({
 }: CategoryCardProps) {
   const counts = useQuery(api.items.getGlobalCounts);
   const itemCount = counts?.categoryCounts?.[category._id] || 0;
-  const IconComponent = (LucideIcons as any)[category.icon] || Tag;
+  const IconComponent =
+    (LucideIcons[
+      category.icon as keyof typeof LucideIcons
+    ] as React.ElementType) || Tag;
 
   return (
     <div className="group flex items-center justify-between p-4 rounded-3xl bg-card border border-border/80 shadow-sm hover:shadow-lg dark:bg-muted/10 dark:shadow-premium hover:border-primary/50 hover:-translate-y-1 transition-all duration-300">

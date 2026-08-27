@@ -10,9 +10,10 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/shared/components/ui/tooltip";
+import { ItemDoc } from "../../types";
 
 interface ItemPathFieldProps {
-  ancestors: any[];
+  ancestors: ItemDoc[];
   itemName: string;
 }
 

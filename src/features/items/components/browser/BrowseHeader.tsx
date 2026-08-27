@@ -7,13 +7,14 @@ import { Button } from "@/shared/components/ui/button";
 import { SearchBar } from "@/shared/components/SearchBar";
 import { ItemBreadcrumb } from "./ItemBreadcrumb";
 import { ViewToggle } from "./ViewToggle";
+import { ItemDoc } from "../../types";
 
 interface BrowseHeaderProps {
   locationFilterId: string | null;
   currentPath: string;
-  ancestors: any[];
+  ancestors: ItemDoc[];
   ancestorsLoading: boolean;
-  items: any[];
+  items: ItemDoc[];
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   viewMode: "grid" | "list";

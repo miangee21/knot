@@ -10,14 +10,16 @@ import { bytesToDisplay } from "@/features/locations/utils/formatBytes";
 import { formatRange } from "@/features/items/utils/formatRange";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
+import { ItemDoc, LocationDoc, CategoryDoc } from "../../types";
+import { Id } from "../../../../../convex/_generated/dataModel";
 
 interface ItemDetailSheetProps {
-  item: any | null;
+  item: ItemDoc | null;
   isOpen: boolean;
   onClose: () => void;
-  allLocations: any[];
-  categories: any[];
-  ancestors?: any[];
+  allLocations: LocationDoc[];
+  categories: CategoryDoc[];
+  ancestors?: ItemDoc[];
 }
 
 export function ItemDetailSheet({
@@ -34,7 +36,7 @@ export function ItemDetailSheet({
 
   const folderCounts = useQuery(
     api.items.getFolderCounts,
-    isFolder && itemId ? { parentId: itemId } : "skip",
+    isFolder && itemId ? { parentId: itemId as Id<"items"> } : "skip",
   );
 
   if (!item) return null;

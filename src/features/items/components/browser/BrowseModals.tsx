@@ -5,27 +5,32 @@ import { ItemFormDialog } from "@/features/items/components/form/ItemFormDialog"
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { MoveItemDialog } from "@/features/items/components/browser/MoveItemDialog";
 import { ItemDetailSheet } from "@/features/items/components/detail/ItemDetailSheet";
-import { ItemFormData } from "@/features/items/types";
+import {
+  ItemFormData,
+  ItemDoc,
+  CategoryDoc,
+  LocationDoc,
+} from "@/features/items/types";
 import { Id } from "../../../../../convex/_generated/dataModel";
 
 interface BrowseModalsProps {
   isFormOpen: boolean;
   setIsFormOpen: (open: boolean) => void;
   onFormSubmit: (data: ItemFormData) => Promise<void>;
-  editingItem: any;
+  editingItem: ItemDoc | null;
   currentParentId: Id<"items"> | null;
-  categories: any[];
-  locations: any[];
+  categories: CategoryDoc[];
+  locations: LocationDoc[];
   inheritedLocationIds: string[];
   isSubmitting: boolean;
-  itemToDelete: any;
-  setItemToDelete: (item: any) => void;
+  itemToDelete: ItemDoc | null;
+  setItemToDelete: (item: ItemDoc | null) => void;
   onConfirmDelete: () => Promise<void>;
-  movingItem: any;
-  setMovingItem: (item: any) => void;
-  detailItem: any;
-  setDetailItem: (item: any) => void;
-  ancestors: any[] | undefined;
+  movingItem: ItemDoc | null;
+  setMovingItem: (item: ItemDoc | null) => void;
+  detailItem: ItemDoc | null;
+  setDetailItem: (item: ItemDoc | null) => void;
+  ancestors: ItemDoc[] | undefined;
 }
 
 export function BrowseModals({

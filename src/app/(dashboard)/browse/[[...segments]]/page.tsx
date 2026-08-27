@@ -8,7 +8,7 @@ import { Plus, PackageOpen } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { Pagination } from "@/shared/components/Pagination";
-import { ItemFormData } from "@/features/items/types";
+import { ItemFormData, ItemDoc } from "@/features/items/types";
 import { toast } from "sonner";
 // Browser UI Components
 import { BrowseHeader } from "@/features/items/components/browser/BrowseHeader";
@@ -58,7 +58,7 @@ export default function BrowsePage() {
   const inheritedLocationIds = React.useMemo(() => {
     if (!ancestors) return [];
     const locSet = new Set<string>();
-    ancestors.forEach((anc: any) => {
+    ancestors.forEach((anc: ItemDoc) => {
       if (anc.locationIds) {
         anc.locationIds.forEach((id: string) => locSet.add(id));
       }
@@ -74,11 +74,11 @@ export default function BrowsePage() {
 
   // Form & Modals State
   const [isFormOpen, setIsFormOpen] = React.useState(false);
-  const [editingItem, setEditingItem] = React.useState<any | null>(null);
+  const [editingItem, setEditingItem] = React.useState<ItemDoc | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [itemToDelete, setItemToDelete] = React.useState<any | null>(null);
-  const [detailItem, setDetailItem] = React.useState<any | null>(null);
-  const [movingItem, setMovingItem] = React.useState<any | null>(null);
+  const [itemToDelete, setItemToDelete] = React.useState<ItemDoc | null>(null);
+  const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
+  const [movingItem, setMovingItem] = React.useState<ItemDoc | null>(null);
 
   // Search & Pagination State
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -115,8 +115,9 @@ export default function BrowsePage() {
 
     // Smart Dependency Filter: Show only items using this specific location
     if (locationFilterId) {
-      baseItems = baseItems.filter((item) =>
-        (item.locationIds as string[]).includes(locationFilterId),
+      baseItems = baseItems.filter(
+        (item) =>
+          item && (item.locationIds as string[]).includes(locationFilterId),
       );
     }
 
@@ -143,7 +144,7 @@ export default function BrowsePage() {
     setIsFormOpen(true);
   };
 
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item: ItemDoc) => {
     setDetailItem(item);
   };
 
@@ -181,7 +182,8 @@ export default function BrowsePage() {
       };
 
       try {
-        if (editingItem) await handleUpdate(editingItem._id, payload);
+        if (editingItem)
+          await handleUpdate(editingItem._id as Id<"items">, payload);
         else await handleCreate(payload);
       } catch (dbError) {
         if (newlyUploadedStorageId) {
@@ -202,7 +204,7 @@ export default function BrowsePage() {
   const onConfirmDelete = async () => {
     if (!itemToDelete) return;
     try {
-      await handleDelete(itemToDelete._id);
+      await handleDelete(itemToDelete._id as Id<"items">);
       setItemToDelete(null);
     } catch (error) {
       console.error(error);
@@ -216,7 +218,7 @@ export default function BrowsePage() {
         currentPath={currentPath}
         ancestors={ancestors || []}
         ancestorsLoading={ancestorsLoading}
-        items={items || []}
+        items={(items || []).filter((i): i is ItemDoc => i !== null)}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         viewMode={viewMode}
@@ -255,7 +257,7 @@ export default function BrowsePage() {
             {/* Dynamic Rendering based on ViewMode */}
             {viewMode === "grid" ? (
               <ItemGrid
-                items={currentItems}
+                items={currentItems.filter((i): i is ItemDoc => i !== null)}
                 currentPath={currentPath}
                 allLocations={locations || []}
                 onDetailsClick={handleItemClick}
@@ -270,7 +272,7 @@ export default function BrowsePage() {
               />
             ) : (
               <ItemListTable
-                items={currentItems}
+                items={currentItems.filter((i): i is ItemDoc => i !== null)}
                 currentPath={currentPath}
                 allLocations={locations || []}
                 onDetailsClick={handleItemClick}

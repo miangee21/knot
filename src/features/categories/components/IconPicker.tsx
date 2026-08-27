@@ -105,7 +105,9 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
       <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-35 overflow-y-auto p-1 pr-2 custom-scrollbar">
         {filteredIcons.map((iconName) => {
           // Dynamically grab the component from Lucide
-          const IconComponent = (LucideIcons as any)[iconName];
+          const IconComponent = LucideIcons[
+            iconName as keyof typeof LucideIcons
+          ] as React.ElementType;
           if (!IconComponent) return null;
 
           const isSelected = value === iconName;

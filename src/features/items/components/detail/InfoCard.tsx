@@ -1,8 +1,10 @@
 //src/features/items/components/detail/InfoCard.tsx
 "use client";
 
+import { ElementType } from "react";
+
 interface InfoCardProps {
-  icon: any;
+  icon: ElementType;
   label: string;
   value: string;
   prominent?: boolean;

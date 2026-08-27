@@ -11,8 +11,11 @@ import { TrashHeader } from "@/features/trash/components/TrashHeader";
 import { TrashModals } from "@/features/trash/components/TrashModals";
 import { TrashContentArea } from "@/features/trash/components/TrashContentArea";
 import { ItemDetailSheet } from "@/features/items/components/detail/ItemDetailSheet";
+import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
 
 type TrashType = "item" | "category" | "location";
+type TrashItemBase = { type: TrashType; name: string; _id: string };
+type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 
 const TAB_CONFIG = [
   { id: "item" as TrashType, label: "Items", key: "items" },
@@ -38,10 +41,14 @@ export default function TrashPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
-  const [detailItem, setDetailItem] = React.useState<any>(null);
-  const [itemToDelete, setItemToDelete] = React.useState<any>(null);
+  const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
+  const [itemToDelete, setItemToDelete] = React.useState<TrashedItem | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const [itemToRestore, setItemToRestore] = React.useState<any>(null);
+  const [itemToRestore, setItemToRestore] = React.useState<TrashedItem | null>(
+    null,
+  );
   const [isRestoring, setIsRestoring] = React.useState(false);
   const [isEmptyBinOpen, setIsEmptyBinOpen] = React.useState(false);
   const [isEmptying, setIsEmptying] = React.useState(false);

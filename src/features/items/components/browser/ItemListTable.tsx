@@ -3,15 +3,16 @@
 
 import { useState } from "react";
 import { ItemListRow } from "./ItemListRow";
+import { ItemDoc, LocationDoc } from "../../types";
 
 interface ItemListTableProps {
-  items: any[];
+  items: ItemDoc[];
   currentPath: string;
-  allLocations: any[];
-  onDetailsClick: (item: any) => void;
-  onEditClick: (item: any) => void;
-  onDeleteClick: (item: any) => void;
-  onMoveClick: (item: any) => void;
+  allLocations: LocationDoc[];
+  onDetailsClick: (item: ItemDoc) => void;
+  onEditClick: (item: ItemDoc) => void;
+  onDeleteClick: (item: ItemDoc) => void;
+  onMoveClick: (item: ItemDoc) => void;
 }
 
 type ColumnWidths = {
