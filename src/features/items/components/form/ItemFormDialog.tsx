@@ -21,13 +21,13 @@ import { PosterUploadField } from "./PosterUploadField";
 import { CategorySelect } from "./CategorySelect";
 import { CategoryDoc } from "@/features/categories/components/CategoryCard";
 import { LocationDoc } from "@/features/locations/components/LocationCard";
-import { itemFormSchema, ItemFormData } from "../../types";
+import { itemFormSchema, ItemFormData, ItemDoc } from "../../types";
 
 interface ItemFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ItemFormData) => Promise<void>;
-  initialData?: any;
+  initialData?: Partial<ItemDoc> | null;
   defaultParentId?: string;
   categories: CategoryDoc[];
   locations: LocationDoc[];
@@ -81,8 +81,8 @@ export function ItemFormDialog({
       reset({
         name: initialData?.name || "",
         parentId: initialData?.parentId || defaultParentId || null,
-        start: initialData?.rangeStart ?? initialData?.start,
-        end: initialData?.rangeEnd ?? initialData?.end,
+        start: initialData?.rangeStart ?? undefined,
+        end: initialData?.rangeEnd ?? undefined,
         sizeBytes: initialData?.sizeBytes,
         categoryId: initialData?.categoryId || null,
         locationIds: initialData

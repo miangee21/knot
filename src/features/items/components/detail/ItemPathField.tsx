@@ -20,7 +20,11 @@ interface ItemPathFieldProps {
 export function ItemPathField({ ancestors, itemName }: ItemPathFieldProps) {
   const [copied, setCopied] = React.useState(false);
 
-  const pathArray = ["Home", ...ancestors.map((a: any) => a.name), itemName];
+  const pathArray = [
+    "Home",
+    ...ancestors.map((a: ItemDoc) => a.name),
+    itemName,
+  ];
   const fullPath = pathArray.join(" > ");
 
   const displayPath =

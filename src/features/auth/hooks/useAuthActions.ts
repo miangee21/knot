@@ -31,8 +31,11 @@ export function useAuthActions() {
         description: "Welcome to Knot.",
       });
       router.push("/locations");
-    } catch (error: any) {
-      const errorMsg = error?.message?.toLowerCase() || "";
+    } catch (error: unknown) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message.toLowerCase()
+          : String(error).toLowerCase();
       let description = "Please check your details and try again.";
 
       if (errorMsg.includes("already in use") || errorMsg.includes("exists")) {

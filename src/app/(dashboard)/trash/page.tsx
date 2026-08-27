@@ -14,7 +14,12 @@ import { ItemDetailSheet } from "@/features/items/components/detail/ItemDetailSh
 import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
 
 type TrashType = "item" | "category" | "location";
-type TrashItemBase = { type: TrashType; name: string; _id: string };
+type TrashItemBase = {
+  type: TrashType;
+  name: string;
+  _id: string;
+  deletedAt?: number;
+};
 type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 
 const TAB_CONFIG = [
@@ -60,33 +65,37 @@ export default function TrashPage() {
   const activeTabData = React.useMemo(() => {
     if (!trashData) return [];
     if (activeTab === "item") {
-      const allItems = trashData.items.map((i: any) => ({
-        ...i,
-        type: "item",
+      const allItems = trashData.items.map((i) => ({
+        ...(i as unknown as ItemDoc),
+        type: "item" as const,
       }));
       if (debouncedSearch) return allItems;
 
       if (currentFolderId) {
-        return allItems.filter((i: any) => i.parentId === currentFolderId);
+        return allItems.filter((i) => i.parentId === currentFolderId);
       }
-      return allItems.filter((item: any) => {
+      return allItems.filter((item) => {
         if (!item.parentId) return true;
-        const isParentInTrash = allItems.some(
-          (i: any) => i._id === item.parentId,
-        );
+        const isParentInTrash = allItems.some((i) => i._id === item.parentId);
         return !isParentInTrash;
       });
     }
     if (activeTab === "category")
-      return trashData.categories.map((c: any) => ({ ...c, type: "category" }));
+      return trashData.categories.map((c) => ({
+        ...(c as unknown as CategoryDoc),
+        type: "category" as const,
+      }));
     if (activeTab === "location")
-      return trashData.locations.map((l: any) => ({ ...l, type: "location" }));
+      return trashData.locations.map((l) => ({
+        ...(l as unknown as LocationDoc),
+        type: "location" as const,
+      }));
     return [];
   }, [trashData, activeTab, debouncedSearch, currentFolderId]);
 
   const filteredTrash = React.useMemo(() => {
     if (!debouncedSearch) return activeTabData;
-    return activeTabData.filter((item: any) =>
+    return activeTabData.filter((item: TrashedItem) =>
       item.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
     );
   }, [activeTabData, debouncedSearch]);
@@ -183,7 +192,13 @@ export default function TrashPage() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         tabConfig={TAB_CONFIG}
-        trashData={trashData}
+        trashData={
+          trashData as unknown as {
+            items: ItemDoc[];
+            categories: CategoryDoc[];
+            locations: LocationDoc[];
+          }
+        }
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         viewMode={viewMode}

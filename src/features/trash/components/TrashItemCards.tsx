@@ -16,7 +16,7 @@ type TrashItemBase = {
   type: TrashType;
   name: string;
   _id: string;
-  deletedAt: number;
+  deletedAt?: number;
 };
 type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 

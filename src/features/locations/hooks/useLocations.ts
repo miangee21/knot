@@ -41,8 +41,11 @@ export function useLocations() {
     try {
       await moveToBin({ id, type: "location" });
       toast.success("Location moved to Recycle Bin.");
-    } catch (error: any) {
-      if (error.message.includes("LOCATION_HAS_ITEMS")) {
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message.includes("LOCATION_HAS_ITEMS")
+      ) {
         toast.error("Cannot delete. This location is used by items.", {
           action: {
             label: "View Items",

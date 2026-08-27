@@ -30,7 +30,7 @@ type TrashItemBase = {
   type: TrashType;
   name: string;
   _id: string;
-  deletedAt: number;
+  deletedAt?: number;
 };
 type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 
@@ -75,7 +75,10 @@ export function TrashCategoryCard({
             {item.name}
           </h3>
           <p className="text-[10px] text-muted-foreground font-medium mt-0.5 opacity-80">
-            Deleted: {new Date(item.deletedAt).toLocaleDateString()}
+            Deleted:{" "}
+            {item.deletedAt
+              ? new Date(item.deletedAt).toLocaleDateString()
+              : "Unknown"}
           </p>
         </div>
       </div>
@@ -164,7 +167,10 @@ export function TrashLocationCard({
           </span>
         </div>
         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-          Deleted: {new Date(item.deletedAt).toLocaleDateString()}
+          Deleted:{" "}
+          {item.deletedAt
+            ? new Date(item.deletedAt).toLocaleDateString()
+            : "Unknown"}
         </p>
       </div>
       <div className="space-y-2 pt-3 border-t border-border/40">
@@ -213,7 +219,10 @@ export function TrashLocationListRow({
             {item.name}
           </h3>
           <p className="text-xs text-muted-foreground truncate mt-0.5">
-            Deleted on {new Date(item.deletedAt).toLocaleDateString()}
+            Deleted on{" "}
+            {item.deletedAt
+              ? new Date(item.deletedAt).toLocaleDateString()
+              : "Unknown"}
           </p>
         </div>
       </div>

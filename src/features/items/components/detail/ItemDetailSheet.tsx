@@ -55,7 +55,7 @@ export function ItemDetailSheet({
       ?.map((id: string) =>
         allLocations.find((location) => location._id === id),
       )
-      .filter(Boolean) || [];
+      .filter((loc): loc is LocationDoc => loc !== undefined) || [];
 
   const rangeStr = formatRange(item.rangeStart, item.rangeEnd);
 
@@ -171,7 +171,7 @@ export function ItemDetailSheet({
               "
             >
               {locations.length > 0 ? (
-                locations.map((location: any) => (
+                locations.map((location) => (
                   <div
                     key={location._id}
                     className="

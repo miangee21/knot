@@ -9,14 +9,22 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
+import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
+
+type TrashType = "item" | "category" | "location";
+type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & {
+  type: TrashType;
+  name: string;
+  _id: string;
+};
 
 interface TrashModalsProps {
-  itemToDelete: { name: string } | null;
-  setItemToDelete: (val: any) => void;
+  itemToDelete: TrashedItem | null;
+  setItemToDelete: (val: TrashedItem | null) => void;
   onConfirmDelete: () => Promise<void>;
   isDeleting: boolean;
-  itemToRestore: { name: string } | null;
-  setItemToRestore: (val: any) => void;
+  itemToRestore: TrashedItem | null;
+  setItemToRestore: (val: TrashedItem | null) => void;
   onConfirmRestore: () => Promise<void>;
   isRestoring: boolean;
   isEmptyBinOpen: boolean;

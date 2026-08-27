@@ -6,6 +6,7 @@ import { Button } from "@/shared/components/ui/button";
 import { SearchBar } from "@/shared/components/SearchBar";
 import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
 import { cn } from "@/shared/lib/utils";
+import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
 
 type TrashType = "item" | "category" | "location";
 
@@ -14,7 +15,9 @@ interface TrashHeaderProps {
   activeTab: TrashType;
   setActiveTab: (tab: TrashType) => void;
   tabConfig: { id: TrashType; label: string; key: string }[];
-  trashData: { items: any[]; categories: any[]; locations: any[] } | undefined;
+  trashData:
+    | { items: ItemDoc[]; categories: CategoryDoc[]; locations: LocationDoc[] }
+    | undefined;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   viewMode: "grid" | "list";

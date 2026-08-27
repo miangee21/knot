@@ -10,10 +10,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/shared/components/ui/dropdown-menu";
+import { CategoryDoc, LocationDoc } from "@/features/items/types";
 
 interface RiskFiltersProps {
-  categories: any[];
-  locations: any[];
+  categories: CategoryDoc[];
+  locations: LocationDoc[];
   selectedCategory: string | null;
   selectedLocations: string[];
   categorySearch: string;
