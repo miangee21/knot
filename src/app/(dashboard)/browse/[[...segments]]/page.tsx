@@ -177,6 +177,7 @@ export default function BrowsePage() {
         // Keep existing storage ID if not changed
         posterStorageId = editingItem.posterStorageId;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { poster, ...cleanData } = data;
       const payload = {
         ...cleanData,

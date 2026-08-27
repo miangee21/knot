@@ -215,7 +215,6 @@ export default function TrashPage() {
           filteredTrashLength={filteredTrash.length}
           activeTab={activeTab}
           viewMode={viewMode}
-          searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           currentItems={currentItems}
           totalItems={totalItems}

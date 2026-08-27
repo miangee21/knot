@@ -80,7 +80,7 @@ export function LocationDeleteModals({
           if (locationToDelete) {
             try {
               await handleDelete(locationToDelete);
-            } catch (e) {
+            } catch {
               // Error handled by hook toast
             } finally {
               setLocationToDelete(null);

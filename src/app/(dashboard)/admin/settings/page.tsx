@@ -47,7 +47,7 @@ export default function AdminSettingsPage() {
             : "New user registrations are now completely blocked.",
         },
       );
-    } catch (error) {
+    } catch {
       toast.error("Update failed", {
         description: "Could not update the signup settings. Please try again.",
       });

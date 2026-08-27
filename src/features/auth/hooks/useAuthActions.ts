@@ -17,7 +17,7 @@ export function useAuthActions() {
         description: "You have successfully logged in.",
       });
       router.push("/locations");
-    } catch (error) {
+    } catch {
       toast.error("Login Failed", {
         description: "Invalid email or password. Please try again.",
       });

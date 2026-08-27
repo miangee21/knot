@@ -28,7 +28,6 @@ interface TrashContentAreaProps {
   filteredTrashLength: number;
   activeTab: "item" | "category" | "location";
   viewMode: "grid" | "list";
-  searchTerm: string;
   setSearchTerm: (val: string) => void;
   currentItems: TrashedItem[];
   totalItems: number;
@@ -48,7 +47,6 @@ export function TrashContentArea({
   filteredTrashLength,
   activeTab,
   viewMode,
-  searchTerm,
   setSearchTerm,
   currentItems,
   totalItems,
