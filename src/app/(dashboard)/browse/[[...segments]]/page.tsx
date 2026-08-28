@@ -45,12 +45,20 @@ export default function BrowsePage() {
   // View Preference (Grid vs List)
   const { viewMode, setViewMode } = useViewPreference();
 
+  // Pagination State (Moved up to pass into data hook)
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
+
   // Data Hooks
   const { ancestors, isLoading: ancestorsLoading } = useItemAncestors(
     currentParentId ?? undefined,
   );
-  const { children: items, isLoading: itemsLoading } =
-    useItemChildren(currentParentId);
+  const {
+    children: items,
+    isLoading: itemsLoading,
+    status: paginationStatus,
+    loadMore,
+  } = useItemChildren(currentParentId, itemsPerPage);
   const { categories } = useCategories();
   const { locations } = useLocations();
 
@@ -80,11 +88,9 @@ export default function BrowsePage() {
   const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
   const [movingItem, setMovingItem] = React.useState<ItemDoc | null>(null);
 
-  // Search & Pagination State
+  // Search State
   const [searchTerm, setSearchTerm] = React.useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
   // Global Search Query (Searches whole DB when searchTerm exists)
   const searchResults = useQuery(
@@ -302,7 +308,26 @@ export default function BrowsePage() {
                   totalItems={totalItems}
                   itemsPerPage={itemsPerPage}
                   currentPage={currentPage}
-                  onPageChange={setCurrentPage}
+                  hasMore={
+                    paginationStatus === "CanLoadMore" &&
+                    !debouncedSearchTerm &&
+                    !locationFilterId
+                  }
+                  onPageChange={(newPage) => {
+                    if (itemsPerPage !== "all") {
+                      const newStartIndex = (newPage - 1) * itemsPerPage;
+                      // Trigger server fetch if we go beyond currently loaded items
+                      if (
+                        newStartIndex >= items.length &&
+                        paginationStatus === "CanLoadMore" &&
+                        !debouncedSearchTerm &&
+                        !locationFilterId
+                      ) {
+                        loadMore(itemsPerPage);
+                      }
+                    }
+                    setCurrentPage(newPage);
+                  }}
                   onItemsPerPageChange={(val) => {
                     setItemsPerPage(val);
                     setCurrentPage(1);

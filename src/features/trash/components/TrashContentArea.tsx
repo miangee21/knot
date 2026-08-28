@@ -39,6 +39,7 @@ interface TrashContentAreaProps {
   setItemToDelete: (item: TrashedItem) => void;
   setCurrentFolderId: (id: string | null) => void;
   setDetailItem: (item: ItemDoc) => void;
+  hasMore?: boolean;
 }
 
 export function TrashContentArea({
@@ -58,6 +59,7 @@ export function TrashContentArea({
   setItemToDelete,
   setCurrentFolderId,
   setDetailItem,
+  hasMore = false,
 }: TrashContentAreaProps) {
   if (totalTrashCount === 0) {
     return (
@@ -173,6 +175,7 @@ export function TrashContentArea({
             totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             currentPage={currentPage}
+            hasMore={hasMore}
             onPageChange={setCurrentPage}
             onItemsPerPageChange={(val) => {
               setItemsPerPage(val);

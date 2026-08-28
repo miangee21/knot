@@ -1,6 +1,7 @@
 //convex/trash.ts
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 
@@ -81,29 +82,39 @@ export const moveToBin = mutation({
   },
 });
 
-// 2. Get All Trashed Items for Recycle Bin UI
+// 2a. Get Trashed Items Paginated
 export const getTrashItems = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return { items: [], categories: [], locations: [] };
+    if (!userId) return { page: [], isDone: true, continueCursor: "" };
 
-    const rawItems = await ctx.db
+    const results = await ctx.db
       .query("items")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.neq(q.field("deletedAt"), undefined))
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
 
-    // Attach poster URLs for trashed items
-    const items = await Promise.all(
-      rawItems.map(async (item) => ({
+    const page = await Promise.all(
+      results.page.map(async (item) => ({
         ...item,
         posterUrl: item.posterStorageId
           ? await ctx.storage.getUrl(item.posterStorageId)
           : undefined,
       })),
     );
+
+    return { ...results, page };
+  },
+});
+
+// 2b. Get Trashed Categories and Locations (Flat)
+export const getTrashAssets = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { categories: [], locations: [] };
 
     const categories = await ctx.db
       .query("categories")
@@ -119,7 +130,7 @@ export const getTrashItems = query({
       .order("desc")
       .collect();
 
-    return { items, categories, locations };
+    return { categories, locations };
   },
 });
 

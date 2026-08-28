@@ -1,6 +1,7 @@
 //convex/items.ts
 import { v } from "convex/values";
 import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id, Doc } from "./_generated/dataModel";
 import { ItemDoc } from "../src/features/items/types";
@@ -182,22 +183,28 @@ async function withPosterUrl(
   } as unknown as ItemDoc; // Cast to ItemDoc to satisfy frontend types safely
 }
 
-// 5. Get Children of a specific Parent
+// 5. Get Children of a specific Parent (Paginated)
 export const getChildren = query({
-  args: { parentId: v.union(v.id("items"), v.null()) },
+  args: {
+    parentId: v.union(v.id("items"), v.null()),
+    paginationOpts: paginationOptsValidator,
+  },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!userId) return { page: [], isDone: true, continueCursor: "" };
 
-    const items = await ctx.db
+    const results = await ctx.db
       .query("items")
       .withIndex("by_parent", (q) =>
         q.eq("parentId", args.parentId).eq("userId", userId),
       )
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
-      .collect();
+      .paginate(args.paginationOpts);
 
-    return await Promise.all(items.map((item) => withPosterUrl(ctx, item)));
+    const page = await Promise.all(
+      results.page.map((item) => withPosterUrl(ctx, item)),
+    );
+    return { ...results, page };
   },
 });
 
@@ -309,7 +316,7 @@ export const getGlobalCounts = query({
   },
 });
 
-// 10. Get all items flat for Risk Analysis
+// 10. Get all items flat (For global location filters)
 export const getAllItemsFlat = query({
   args: {},
   handler: async (ctx) => {

@@ -1,17 +1,35 @@
 //src/features/trash/hooks/useTrash.ts
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 
-export function useTrash() {
-  const trashData = useQuery(api.trash.getTrashItems);
+export function useTrash(itemsPerPage: number | "all" = 10) {
+  const initialNumItems = itemsPerPage === "all" ? 10000 : itemsPerPage;
+
+  const {
+    results: items,
+    status,
+    loadMore,
+  } = usePaginatedQuery(api.trash.getTrashItems, {}, { initialNumItems });
+
+  const assets = useQuery(api.trash.getTrashAssets);
+
+  const trashData =
+    items && assets
+      ? {
+          items,
+          categories: assets.categories,
+          locations: assets.locations,
+        }
+      : undefined;
+
   const restoreItem = useMutation(api.trash.restore);
   const hardDeleteItem = useMutation(api.trash.hardDelete);
   const emptyBin = useMutation(api.trash.emptyBin);
 
-  const isLoading = trashData === undefined;
+  const isLoading = status === "LoadingFirstPage" || assets === undefined;
 
   const handleRestore = async (
     id: string,
@@ -52,6 +70,8 @@ export function useTrash() {
   return {
     trashData,
     isLoading,
+    status,
+    loadMore,
     handleRestore,
     handleHardDelete,
     handleEmptyBin,

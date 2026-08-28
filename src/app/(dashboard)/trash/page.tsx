@@ -29,13 +29,17 @@ const TAB_CONFIG = [
 ];
 
 export default function TrashPage() {
+  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
+
   const {
     trashData,
     isLoading,
+    status: paginationStatus,
+    loadMore,
     handleRestore,
     handleHardDelete,
     handleEmptyBin,
-  } = useTrash();
+  } = useTrash(itemsPerPage);
   const { viewMode, setViewMode } = useViewPreference();
   const { categories } = useCategories();
   const { locations } = useLocations();
@@ -44,7 +48,6 @@ export default function TrashPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
   const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<TrashedItem | null>(
@@ -218,12 +221,29 @@ export default function TrashPage() {
           totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
+          setCurrentPage={(newPage) => {
+            if (itemsPerPage !== "all" && activeTab === "item") {
+              const newStartIndex = (newPage - 1) * itemsPerPage;
+              if (
+                newStartIndex >= (trashData?.items.length || 0) &&
+                paginationStatus === "CanLoadMore" &&
+                !debouncedSearch
+              ) {
+                loadMore(itemsPerPage);
+              }
+            }
+            setCurrentPage(newPage);
+          }}
           setItemsPerPage={setItemsPerPage}
           setItemToRestore={setItemToRestore}
           setItemToDelete={setItemToDelete}
           setCurrentFolderId={setCurrentFolderId}
           setDetailItem={setDetailItem}
+          hasMore={
+            paginationStatus === "CanLoadMore" &&
+            activeTab === "item" &&
+            !debouncedSearch
+          }
         />
       </div>
 

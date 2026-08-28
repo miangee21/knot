@@ -14,6 +14,7 @@ import type * as categories from "../categories.js";
 import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as locations from "../locations.js";
+import type * as risk from "../risk.js";
 import type * as trash from "../trash.js";
 import type * as users from "../users.js";
 
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   items: typeof items;
   locations: typeof locations;
+  risk: typeof risk;
   trash: typeof trash;
   users: typeof users;
 }>;

@@ -10,6 +10,7 @@ interface PaginationProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (val: number | "all") => void;
+  hasMore?: boolean;
 }
 
 export function Pagination({
@@ -18,8 +19,9 @@ export function Pagination({
   currentPage,
   onPageChange,
   onItemsPerPageChange,
+  hasMore = false,
 }: PaginationProps) {
-  if (totalItems <= 5) return null;
+  if (totalItems <= 5 && !hasMore) return null;
 
   const isAll = itemsPerPage === "all";
   const totalPages = isAll
@@ -76,10 +78,10 @@ export function Pagination({
       <div className="flex items-center gap-4 text-sm">
         <span className="text-muted-foreground hidden md:inline-block font-medium">
           Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of{" "}
-          {totalItems}
+          {hasMore ? "many" : totalItems}
         </span>
 
-        {!isAll && totalPages > 1 && (
+        {!isAll && (totalPages > 1 || hasMore) && (
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -93,18 +95,22 @@ export function Pagination({
 
             <div className="flex items-center px-3 font-semibold text-foreground bg-muted/50 h-8 rounded-lg">
               {currentPage}{" "}
-              <span className="text-muted-foreground font-normal mx-1">/</span>{" "}
-              {totalPages}
+              {!hasMore && (
+                <>
+                  <span className="text-muted-foreground font-normal mx-1">
+                    /
+                  </span>{" "}
+                  {totalPages}
+                </>
+              )}
             </div>
 
             <Button
               variant="outline"
               size="icon"
               className="w-8 h-8 rounded-lg border-border hover:bg-muted"
-              disabled={currentPage === totalPages}
-              onClick={() =>
-                onPageChange(Math.min(totalPages, currentPage + 1))
-              }
+              disabled={currentPage >= totalPages && !hasMore}
+              onClick={() => onPageChange(currentPage + 1)}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>

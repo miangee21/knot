@@ -37,10 +37,15 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
     }
   }, [isOpen, item]);
 
-  // Fetch folders for the current view
-  const children = useQuery(
+  // Fetch folders for the current view (Paginated limit for Dialog)
+  const childrenResponse = useQuery(
     api.items.getChildren,
-    isOpen ? { parentId: currentFolderId } : "skip",
+    isOpen
+      ? {
+          parentId: currentFolderId,
+          paginationOpts: { numItems: 100, cursor: null },
+        }
+      : "skip",
   );
 
   // Fetch ancestors for breadcrumb
@@ -50,7 +55,9 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
   );
 
   const folders =
-    children?.filter((c): c is ItemDoc => c !== null && c.isFolder) || [];
+    childrenResponse?.page?.filter(
+      (c): c is ItemDoc => c !== null && c.isFolder,
+    ) || [];
 
   // SECURITY: Check if current destination is the item itself or inside it
   const isDescendant = ancestors?.some((anc: ItemDoc) => anc._id === item?._id);
@@ -133,7 +140,7 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
 
         {/* Folders List */}
         <div className="h-64 overflow-y-auto custom-scrollbar p-2">
-          {children === undefined ? (
+          {childrenResponse === undefined ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="w-6 h-6 animate-spin text-primary/50" />
             </div>

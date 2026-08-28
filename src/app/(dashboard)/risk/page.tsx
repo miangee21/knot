@@ -22,7 +22,6 @@ import { ItemDoc } from "@/features/items/types";
 import { Id } from "../../../../convex/_generated/dataModel";
 
 export default function RiskPage() {
-  const { riskItems, isLoading } = useRiskAnalysis();
   const { viewMode, setViewMode } = useViewPreference();
   const { categories } = useCategories();
   const { locations } = useLocations();
@@ -43,6 +42,15 @@ export default function RiskPage() {
   // Pagination State
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
+
+  // Fetch Custom Server-Paginated Data
+  const { riskItems, totalRiskCount, isLoading } = useRiskAnalysis(
+    currentPage,
+    itemsPerPage,
+    searchTerm,
+    selectedCategory,
+    selectedLocations,
+  );
 
   // Detail & Move Modal State
   const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
@@ -77,42 +85,9 @@ export default function RiskPage() {
     setCurrentPage(1);
   };
 
-  // Advanced Filtering Logic
-  const filteredItems = React.useMemo(() => {
-    if (!riskItems) return [];
-
-    return riskItems.filter((item) => {
-      if (!item) return false;
-      // 1. Search Filter
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.riskPath || "").toLowerCase().includes(searchTerm.toLowerCase());
-
-      // 2. Category Filter (Strict exact match)
-      const matchesCategory = selectedCategory
-        ? item.categoryId === selectedCategory
-        : true;
-
-      // 3. Location Filter (Must have at least one of the selected locations)
-      const matchesLocation =
-        selectedLocations.length > 0
-          ? selectedLocations.some((loc) =>
-              (item.effectiveLocations as string[]).includes(loc),
-            )
-          : true;
-
-      return matchesSearch && matchesCategory && matchesLocation;
-    });
-  }, [riskItems, searchTerm, selectedCategory, selectedLocations]);
-
-  // Pagination Logic
-  const totalItems = filteredItems.length;
-  const isAll = itemsPerPage === "all";
-  const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
-  const endIndex = isAll
-    ? totalItems
-    : Math.min(startIndex + (itemsPerPage as number), totalItems);
-  const currentItems = filteredItems.slice(startIndex, endIndex);
+  // Data is already filtered and paginated directly from the server!
+  const currentItems = riskItems || [];
+  const totalItems = totalRiskCount || 0;
 
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">
@@ -124,10 +99,10 @@ export default function RiskPage() {
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                 Risk Analysis
               </h1>
-              {riskItems && riskItems.length > 0 && (
+              {totalItems > 0 && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 sm:mt-1.5 rounded-full bg-destructive/10 text-destructive text-sm font-bold tracking-wide">
                   <AlertTriangle className="w-4 h-4" />
-                  {riskItems.length} items with no backup
+                  {totalItems} items with no backup
                 </span>
               )}
             </div>
@@ -180,10 +155,18 @@ export default function RiskPage() {
             <EmptyState
               icon={ShieldAlert}
               title={
-                riskItems?.length === 0 ? "All Clear!" : "No results found"
+                totalItems === 0 &&
+                !searchTerm &&
+                !selectedCategory &&
+                selectedLocations.length === 0
+                  ? "All Clear!"
+                  : "No results found"
               }
               description={
-                riskItems?.length === 0
+                totalItems === 0 &&
+                !searchTerm &&
+                !selectedCategory &&
+                selectedLocations.length === 0
                   ? "Excellent! All your files have backups and are stored in multiple locations."
                   : "Try adjusting your filters or search term."
               }

@@ -1,16 +1,26 @@
 //src/features/items/hooks/useItemChildren.ts
 "use client";
 
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 
-export function useItemChildren(parentId: Id<"items"> | null) {
-  // If parentId is null, it typically fetches the root-level items
-  const children = useQuery(api.items.getChildren, { parentId });
+export function useItemChildren(
+  parentId: Id<"items"> | null,
+  itemsPerPage: number | "all" = 10,
+) {
+  // If "all", we set a very high initial limit to fetch effectively all active records safely
+  const initialNumItems = itemsPerPage === "all" ? 10000 : itemsPerPage;
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.items.getChildren,
+    { parentId },
+    { initialNumItems },
+  );
 
   return {
-    children,
-    isLoading: children === undefined,
+    children: results,
+    isLoading: status === "LoadingFirstPage",
+    status,
+    loadMore,
   };
 }
