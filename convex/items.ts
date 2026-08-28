@@ -99,6 +99,7 @@ export const create = mutation({
       isFolder: args.isFolder ?? false,
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
+      isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
     });
   },
 });
@@ -164,6 +165,7 @@ export const update = mutation({
       isFolder: args.isFolder ?? false,
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
+      isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
     });
     return args.id;
   },

@@ -136,14 +136,50 @@ export default function BrowsePage() {
     debouncedSearchTerm,
   ]);
 
-  // Pagination Logic
+  // Professional React 18: Render-Phase State Correction (No useEffect)
   const totalItems = filteredItems.length;
   const isAll = itemsPerPage === "all";
-  const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
+  const maxPage = isAll
+    ? 1
+    : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
+
+  if (currentPage > maxPage) {
+    setCurrentPage(maxPage);
+  }
+
+  // Pagination Logic
+  const safeCurrentPage = currentPage > maxPage ? maxPage : currentPage;
+  const startIndex = isAll
+    ? 0
+    : (safeCurrentPage - 1) * (itemsPerPage as number);
   const endIndex = isAll
     ? totalItems
     : Math.min(startIndex + (itemsPerPage as number), totalItems);
   const currentItems = filteredItems.slice(startIndex, endIndex);
+
+  // Auto-fill page if items are deleted and we have more in DB to show
+  React.useEffect(() => {
+    if (
+      itemsPerPage !== "all" &&
+      !debouncedSearchTerm &&
+      !locationFilterId &&
+      paginationStatus === "CanLoadMore" &&
+      totalItems > 0 &&
+      currentItems.length < itemsPerPage &&
+      currentPage === Math.ceil(totalItems / itemsPerPage)
+    ) {
+      loadMore(itemsPerPage);
+    }
+  }, [
+    currentItems.length,
+    itemsPerPage,
+    debouncedSearchTerm,
+    locationFilterId,
+    paginationStatus,
+    loadMore,
+    totalItems,
+    currentPage,
+  ]);
 
   // Prevent effect loops by caching the previous search term safely
   const [prevSearch, setPrevSearch] = React.useState(debouncedSearchTerm);

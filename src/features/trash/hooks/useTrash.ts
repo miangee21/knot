@@ -5,21 +5,35 @@ import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 
-export function useTrash(itemsPerPage: number | "all" = 10) {
+export function useTrash(
+  itemsPerPage: number | "all" = 10,
+  searchTerm: string = "",
+) {
   const initialNumItems = itemsPerPage === "all" ? 10000 : itemsPerPage;
 
   const {
-    results: items,
+    results: paginatedItems,
     status,
     loadMore,
   } = usePaginatedQuery(api.trash.getTrashItems, {}, { initialNumItems });
 
+  const searchResults = useQuery(
+    api.trash.searchTrash,
+    searchTerm ? { query: searchTerm } : "skip",
+  );
+
   const assets = useQuery(api.trash.getTrashAssets);
 
+  // If user is searching, use the global search results; otherwise use paginated items
+  const itemsToUse =
+    searchTerm && searchResults !== undefined
+      ? searchResults
+      : paginatedItems || [];
+
   const trashData =
-    items && assets
+    (paginatedItems !== undefined || searchResults !== undefined) && assets
       ? {
-          items,
+          items: itemsToUse,
           categories: assets.categories,
           locations: assets.locations,
         }
@@ -29,7 +43,9 @@ export function useTrash(itemsPerPage: number | "all" = 10) {
   const hardDeleteItem = useMutation(api.trash.hardDelete);
   const emptyBin = useMutation(api.trash.emptyBin);
 
-  const isLoading = status === "LoadingFirstPage" || assets === undefined;
+  const isSearchLoading = searchTerm !== "" && searchResults === undefined;
+  const isLoading =
+    status === "LoadingFirstPage" || assets === undefined || isSearchLoading;
 
   const handleRestore = async (
     id: string,

@@ -109,6 +109,32 @@ export const getTrashItems = query({
   },
 });
 
+// 2c. Search Trashed Items (Global Search bypasses pagination)
+export const searchTrash = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const results = await ctx.db
+      .query("items")
+      .withSearchIndex("search_name", (q) =>
+        q.search("name", args.query).eq("userId", userId),
+      )
+      .collect();
+
+    const trashedItems = results.filter((i) => i.deletedAt !== undefined);
+    return await Promise.all(
+      trashedItems.map(async (item) => ({
+        ...item,
+        posterUrl: item.posterStorageId
+          ? await ctx.storage.getUrl(item.posterStorageId)
+          : undefined,
+      })),
+    );
+  },
+});
+
 // 2b. Get Trashed Categories and Locations (Flat)
 export const getTrashAssets = query({
   args: {},

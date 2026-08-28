@@ -30,6 +30,8 @@ const TAB_CONFIG = [
 
 export default function TrashPage() {
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
   const {
     trashData,
@@ -39,14 +41,12 @@ export default function TrashPage() {
     handleRestore,
     handleHardDelete,
     handleEmptyBin,
-  } = useTrash(itemsPerPage);
+  } = useTrash(itemsPerPage, debouncedSearch);
   const { viewMode, setViewMode } = useViewPreference();
   const { categories } = useCategories();
   const { locations } = useLocations();
 
   const [activeTab, setActiveTab] = React.useState<TrashType>("item");
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const debouncedSearch = useDebounce(searchTerm, 300);
   const [currentPage, setCurrentPage] = React.useState(1);
 
   const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
@@ -98,10 +98,14 @@ export default function TrashPage() {
 
   const filteredTrash = React.useMemo(() => {
     if (!debouncedSearch) return activeTabData;
+    // Server has already filtered items via global search!
+    if (activeTab === "item") return activeTabData;
+
+    // Fallback for categories/locations
     return activeTabData.filter((item: TrashedItem) =>
       item.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
     );
-  }, [activeTabData, debouncedSearch]);
+  }, [activeTabData, debouncedSearch, activeTab]);
 
   // Safe state sync during render (React 18 recommended way to avoid effect cascades)
   const [prevDeps, setPrevDeps] = React.useState({
@@ -126,13 +130,51 @@ export default function TrashPage() {
     (trashData?.items?.length || 0) +
     (trashData?.categories?.length || 0) +
     (trashData?.locations?.length || 0);
+
+  // Professional React 18: Render-Phase State Correction (No useEffect)
   const totalItems = filteredTrash.length;
   const isAll = itemsPerPage === "all";
-  const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
+  const maxPage = isAll
+    ? 1
+    : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
+
+  if (currentPage > maxPage) {
+    setCurrentPage(maxPage);
+  }
+
+  // Pagination Logic
+  const safeCurrentPage = currentPage > maxPage ? maxPage : currentPage;
+  const startIndex = isAll
+    ? 0
+    : (safeCurrentPage - 1) * (itemsPerPage as number);
   const endIndex = isAll
     ? totalItems
     : Math.min(startIndex + (itemsPerPage as number), totalItems);
   const currentItems = filteredTrash.slice(startIndex, endIndex);
+
+  // Auto-fill page if items are restored/deleted and we have more in DB
+  React.useEffect(() => {
+    if (
+      itemsPerPage !== "all" &&
+      activeTab === "item" &&
+      !debouncedSearch &&
+      paginationStatus === "CanLoadMore" &&
+      totalItems > 0 &&
+      currentItems.length < itemsPerPage &&
+      currentPage === Math.ceil(totalItems / itemsPerPage)
+    ) {
+      loadMore(itemsPerPage);
+    }
+  }, [
+    currentItems.length,
+    itemsPerPage,
+    activeTab,
+    debouncedSearch,
+    paginationStatus,
+    loadMore,
+    totalItems,
+    currentPage,
+  ]);
 
   const handleBackFolder = () => {
     const current = trashData?.items.find((i) => i._id === currentFolderId);
@@ -178,14 +220,6 @@ export default function TrashPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">
       <TrashHeader
@@ -210,41 +244,47 @@ export default function TrashPage() {
       />
 
       <div className="flex-1 flex flex-col space-y-4">
-        <TrashContentArea
-          totalTrashCount={totalTrashCount}
-          activeTabDataLength={activeTabData.length}
-          filteredTrashLength={filteredTrash.length}
-          activeTab={activeTab}
-          viewMode={viewMode}
-          setSearchTerm={setSearchTerm}
-          currentItems={currentItems}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          currentPage={currentPage}
-          setCurrentPage={(newPage) => {
-            if (itemsPerPage !== "all" && activeTab === "item") {
-              const newStartIndex = (newPage - 1) * itemsPerPage;
-              if (
-                newStartIndex >= (trashData?.items.length || 0) &&
-                paginationStatus === "CanLoadMore" &&
-                !debouncedSearch
-              ) {
-                loadMore(itemsPerPage);
+        {isLoading ? (
+          <div className="flex items-center justify-center min-h-[40vh]">
+            <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          </div>
+        ) : (
+          <TrashContentArea
+            totalTrashCount={totalTrashCount}
+            activeTabDataLength={activeTabData.length}
+            filteredTrashLength={filteredTrash.length}
+            activeTab={activeTab}
+            viewMode={viewMode}
+            setSearchTerm={setSearchTerm}
+            currentItems={currentItems}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            setCurrentPage={(newPage) => {
+              if (itemsPerPage !== "all" && activeTab === "item") {
+                const newStartIndex = (newPage - 1) * itemsPerPage;
+                if (
+                  newStartIndex >= (trashData?.items.length || 0) &&
+                  paginationStatus === "CanLoadMore" &&
+                  !debouncedSearch
+                ) {
+                  loadMore(itemsPerPage);
+                }
               }
+              setCurrentPage(newPage);
+            }}
+            setItemsPerPage={setItemsPerPage}
+            setItemToRestore={setItemToRestore}
+            setItemToDelete={setItemToDelete}
+            setCurrentFolderId={setCurrentFolderId}
+            setDetailItem={setDetailItem}
+            hasMore={
+              paginationStatus === "CanLoadMore" &&
+              activeTab === "item" &&
+              !debouncedSearch
             }
-            setCurrentPage(newPage);
-          }}
-          setItemsPerPage={setItemsPerPage}
-          setItemToRestore={setItemToRestore}
-          setItemToDelete={setItemToDelete}
-          setCurrentFolderId={setCurrentFolderId}
-          setDetailItem={setDetailItem}
-          hasMore={
-            paginationStatus === "CanLoadMore" &&
-            activeTab === "item" &&
-            !debouncedSearch
-          }
-        />
+          />
+        )}
       </div>
 
       {detailItem && (

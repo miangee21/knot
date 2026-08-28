@@ -52,9 +52,11 @@ export default defineSchema({
     notes: v.optional(v.string()),
 
     deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
+    isAtRisk: v.optional(v.boolean()), // Write-Time Computed Flag
   })
     .index("by_user", ["userId"])
     .index("by_parent", ["parentId", "userId"])
+    .index("by_risk", ["userId", "isAtRisk"])
     .searchIndex("search_name", {
       searchField: "name",
       filterFields: ["userId"],

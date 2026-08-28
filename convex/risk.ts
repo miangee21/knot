@@ -32,14 +32,6 @@ export const getRiskItemsPaginated = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return { items: [], totalCount: 0 };
 
-    // Get active locations
-    const activeLocations = await ctx.db
-      .query("locations")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) => q.eq(q.field("deletedAt"), undefined))
-      .collect();
-    const activeLocationIds = activeLocations.map((l) => l._id);
-
     // Fetch folder names for Breadcrumbs (Fast, no posters)
     const allFolders = await ctx.db
       .query("items")
@@ -66,33 +58,23 @@ export const getRiskItemsPaginated = query({
       return ["Home", ...path].join(" > ");
     };
 
-    // Fetch active files only
+    // 1. Native Database Risk Filter (O(1) Fetch using new index)
+    // Server pulls ONLY at-risk files using the native index. Zero load on safe files.
     const files = await ctx.db
       .query("items")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("deletedAt"), undefined),
-          q.eq(q.field("isFolder"), false),
-        ),
-      )
+      .withIndex("by_risk", (q) => q.eq("userId", userId).eq("isAtRisk", true))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined)) // Bypass trashed items
       .collect();
 
-    // 1. Initial Risk Filter (Map first to add strongly-typed properties, then filter)
-    const mappedFiles = files.map((item) => {
-      const effectiveLocations = (item.locationIds || []).filter((locId) =>
-        activeLocationIds.includes(locId as Id<"locations">),
-      );
+    // Map strongly-typed properties
+    let vulnerableItems = files.map((item) => {
       return {
         ...item,
-        effectiveLocations,
+        // Strict block in trash.ts guarantees that assigned locations are active
+        effectiveLocations: item.locationIds || [],
         riskPath: getRiskPath(item.parentId),
       };
     });
-
-    let vulnerableItems = mappedFiles.filter(
-      (item) => item.effectiveLocations.length === 1,
-    );
 
     // 2. Apply Dynamic Search & Filters on Server
     if (args.searchTerm) {
