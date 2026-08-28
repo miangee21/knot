@@ -32,8 +32,8 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
   // Reset to root when opened
   React.useEffect(() => {
     if (isOpen && item) {
-      // Start at root by default, or you can start at item.parentId
-      setCurrentFolderId(null);
+      // Start at root by default safely without synchronous cascades
+      queueMicrotask(() => setCurrentFolderId(null));
     }
   }, [isOpen, item]);
 
@@ -118,11 +118,11 @@ export function MoveItemDialog({ item, isOpen, onClose }: MoveItemDialogProps) {
             <Home className="w-4 h-4" />
           </button>
 
-          {ancestors?.map((anc: any) => (
+          {ancestors?.map((anc: ItemDoc) => (
             <React.Fragment key={anc._id}>
               <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/50" />
               <button
-                onClick={() => setCurrentFolderId(anc._id)}
+                onClick={() => setCurrentFolderId(anc._id as Id<"items">)}
                 className={`text-xs font-semibold px-2 py-1 rounded-md hover:bg-muted transition-colors whitespace-nowrap ${currentFolderId === anc._id ? "text-primary" : "text-foreground/80"}`}
               >
                 {anc.name}

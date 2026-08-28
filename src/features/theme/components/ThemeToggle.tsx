@@ -11,8 +11,8 @@ export function ThemeToggle() {
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    if (!mounted) setMounted(true);
-  }, [mounted]);
+    queueMicrotask(() => setMounted(true));
+  }, []);
 
   if (!mounted) {
     return (

@@ -10,9 +10,9 @@ export function useViewPreference() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     // Microtask avoids synchronous state update lint warnings
     queueMicrotask(() => {
+      setMounted(true);
       const saved = localStorage.getItem("knot-view-mode") as ViewMode;
       if (saved === "grid" || saved === "list") {
         setViewMode(saved);

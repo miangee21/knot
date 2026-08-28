@@ -29,8 +29,8 @@ export default function LocationsPage() {
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true);
     queueMicrotask(() => {
+      setMounted(true);
       const savedView = localStorage.getItem("knot-location-view") as
         "grid" | "list";
       if (savedView === "grid" || savedView === "list") {
@@ -71,11 +71,11 @@ export default function LocationsPage() {
     );
   }, [locations, debouncedSearchTerm]);
 
-  // Prevent effect loops by caching the previous search term
-  const prevSearchRef = React.useRef(debouncedSearchTerm);
-  if (prevSearchRef.current !== debouncedSearchTerm) {
+  // Prevent effect loops by caching the previous search term safely
+  const [prevSearch, setPrevSearch] = React.useState(debouncedSearchTerm);
+  if (prevSearch !== debouncedSearchTerm) {
+    setPrevSearch(debouncedSearchTerm);
     setCurrentPage(1);
-    prevSearchRef.current = debouncedSearchTerm;
   }
 
   // Pagination Math

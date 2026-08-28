@@ -122,7 +122,13 @@ export default function BrowsePage() {
     }
 
     return baseItems;
-  }, [items, searchTerm, searchResults, locationFilterId, allItemsFlat]);
+  }, [
+    items,
+    searchResults,
+    locationFilterId,
+    allItemsFlat,
+    debouncedSearchTerm,
+  ]);
 
   // Pagination Logic
   const totalItems = filteredItems.length;
@@ -133,11 +139,11 @@ export default function BrowsePage() {
     : Math.min(startIndex + (itemsPerPage as number), totalItems);
   const currentItems = filteredItems.slice(startIndex, endIndex);
 
-  // Prevent effect loops by caching the previous search term
-  const prevSearchRef = React.useRef(debouncedSearchTerm);
-  if (prevSearchRef.current !== debouncedSearchTerm) {
+  // Prevent effect loops by caching the previous search term safely
+  const [prevSearch, setPrevSearch] = React.useState(debouncedSearchTerm);
+  if (prevSearch !== debouncedSearchTerm) {
+    setPrevSearch(debouncedSearchTerm);
     setCurrentPage(1);
-    prevSearchRef.current = debouncedSearchTerm;
   }
 
   // Handlers
@@ -197,7 +203,7 @@ export default function BrowsePage() {
 
       setIsFormOpen(false);
       toast.success(editingItem ? "Item updated!" : "Item created!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save item. Please try again.");
     } finally {
       setIsSubmitting(false);

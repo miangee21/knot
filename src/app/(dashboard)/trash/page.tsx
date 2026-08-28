@@ -132,12 +132,10 @@ export default function TrashPage() {
   const currentItems = filteredTrash.slice(startIndex, endIndex);
 
   const handleBackFolder = () => {
-    const current = trashData?.items.find(
-      (i: any) => i._id === currentFolderId,
-    );
+    const current = trashData?.items.find((i) => i._id === currentFolderId);
     if (current && current.parentId) {
       const parentInTrash = trashData?.items.find(
-        (i: any) => i._id === current.parentId,
+        (i) => i._id === current.parentId,
       );
       if (parentInTrash) return setCurrentFolderId(current.parentId);
     }

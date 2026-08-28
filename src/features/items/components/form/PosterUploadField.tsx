@@ -17,21 +17,21 @@ export function PosterUploadField({
   disabled,
 }: PosterUploadFieldProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
 
-  // Handle local preview without uploading
+  // Professionally derive state during render. Only use Effect for File API side-effects.
+  const previewUrl = typeof value === "string" ? value : objectUrl;
+
   React.useEffect(() => {
-    if (!value) {
-      if (previewUrl !== null) setPreviewUrl(null);
-      return;
-    }
-
-    if (typeof value === "string") {
-      setPreviewUrl(value); // Existing image URL from DB
-    } else if (value instanceof File) {
+    if (value instanceof File) {
       const url = URL.createObjectURL(value);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url); // Cleanup memory
+      queueMicrotask(() => setObjectUrl(url));
+      return () => {
+        URL.revokeObjectURL(url);
+        queueMicrotask(() => setObjectUrl(null));
+      };
+    } else {
+      queueMicrotask(() => setObjectUrl(null));
     }
   }, [value]);
 

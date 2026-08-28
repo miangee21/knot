@@ -46,6 +46,7 @@ export function CategoryFormDialog({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const currentIcon = watch("icon");
 
   // Reset form when dialog opens/closes

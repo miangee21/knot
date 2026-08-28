@@ -19,7 +19,11 @@ function ColumnResizer({
 }: {
   column: "name" | "range" | "size" | "locations";
   isEditMode: boolean;
-  onResizeStart: any;
+  onResizeStart: (
+    col: "name" | "range" | "size" | "locations",
+    startX: number,
+    containerWidth: number,
+  ) => void;
 }) {
   if (!isEditMode) return null;
 
@@ -52,7 +56,11 @@ export function NameCell({
 }: {
   item: ItemDoc;
   isEditMode: boolean;
-  onResizeStart: any;
+  onResizeStart: (
+    col: "name" | "range" | "size" | "locations",
+    startX: number,
+    containerWidth: number,
+  ) => void;
 }) {
   return (
     <div className="relative flex h-full min-w-0 items-center pr-2">
@@ -89,7 +97,11 @@ export function RangeCell({
 }: {
   rangeString: string;
   isEditMode: boolean;
-  onResizeStart: any;
+  onResizeStart: (
+    col: "name" | "range" | "size" | "locations",
+    startX: number,
+    containerWidth: number,
+  ) => void;
 }) {
   return (
     <div className="relative flex h-full min-w-0 items-center pr-2">
@@ -122,7 +134,11 @@ export function SizeCell({
 }: {
   item: ItemDoc;
   isEditMode: boolean;
-  onResizeStart: any;
+  onResizeStart: (
+    col: "name" | "range" | "size" | "locations",
+    startX: number,
+    containerWidth: number,
+  ) => void;
 }) {
   return (
     <div className="relative flex h-full min-w-0 items-center pr-2">
@@ -157,7 +173,11 @@ export function LocationsCell({
   item: ItemDoc;
   locationNames: string;
   isEditMode: boolean;
-  onResizeStart: any;
+  onResizeStart: (
+    col: "name" | "range" | "size" | "locations",
+    startX: number,
+    containerWidth: number,
+  ) => void;
 }) {
   return (
     <div className="relative flex h-full min-w-0 items-center pr-2">

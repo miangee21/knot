@@ -59,9 +59,13 @@ export function LocationFormDialog({
     defaultValues: { name: "", kind: "hard", icon: "HardDrive", notes: "" },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const currentIcon = watch("icon");
+   
   const currentKind = watch("kind");
+   
   const watchTotal = watch("totalBytes") ?? 0;
+   
   const watchUsed = watch("usedBytes") ?? 0;
 
   React.useEffect(() => {

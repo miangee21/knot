@@ -33,10 +33,10 @@ interface ItemListRowProps {
     startX: number,
     containerWidth: number,
   ) => void;
-  onDetailsClick: (item: any) => void;
-  onEditClick: (item: any) => void;
-  onDeleteClick: (item: any) => void;
-  onMoveClick: (item: any) => void;
+  onDetailsClick: (item: ItemDoc) => void;
+  onEditClick: (item: ItemDoc) => void;
+  onDeleteClick: (item: ItemDoc) => void;
+  onMoveClick: (item: ItemDoc) => void;
 }
 
 export function ItemListRow({
