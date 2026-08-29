@@ -1,5 +1,5 @@
 //src/features/risk/hooks/useRiskAnalysis.ts
-import { useQuery } from "convex/react";
+import { useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { ItemDoc } from "../../items/types";
 
@@ -9,23 +9,47 @@ export type RiskItemDoc = ItemDoc & {
 };
 
 export function useRiskAnalysis(
-  currentPage: number,
   itemsPerPage: number | "all",
   searchTerm: string,
   categoryId: string | null,
   selectedLocations: string[],
 ) {
-  const riskData = useQuery(api.risk.getRiskItemsPaginated, {
-    currentPage,
-    itemsPerPage,
-    searchTerm,
-    categoryId,
-    selectedLocations,
-  });
+  const initialNumItems = itemsPerPage === "all" ? 10000 : itemsPerPage;
+  const hasFilters =
+    searchTerm !== "" || categoryId !== null || selectedLocations.length > 0;
+
+  const {
+    results: paginatedItems,
+    status,
+    loadMore,
+  } = usePaginatedQuery(api.risk.getRiskItems, {}, { initialNumItems });
+
+  const filteredItems = useQuery(
+    api.risk.getFilteredRiskItems,
+    hasFilters ? { searchTerm, categoryId, selectedLocations } : "skip",
+  );
+
+  const globalCount = useQuery(api.risk.getRiskCount);
+
+  const riskItems =
+    hasFilters && filteredItems !== undefined
+      ? filteredItems
+      : paginatedItems || [];
+
+  const totalGlobalCount = globalCount ?? 0;
+
+  const isSearchLoading = hasFilters && filteredItems === undefined;
+  const isLoading =
+    status === "LoadingFirstPage" ||
+    isSearchLoading ||
+    globalCount === undefined;
 
   return {
-    riskItems: riskData?.items as RiskItemDoc[] | undefined,
-    totalRiskCount: riskData?.totalCount,
-    isLoading: riskData === undefined,
+    riskItems: riskItems as RiskItemDoc[],
+    totalGlobalCount,
+    hasFilters,
+    isLoading,
+    status,
+    loadMore,
   };
 }

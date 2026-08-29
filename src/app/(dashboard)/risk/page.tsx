@@ -44,13 +44,46 @@ export default function RiskPage() {
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
   // Fetch Custom Server-Paginated Data
-  const { riskItems, totalRiskCount, isLoading } = useRiskAnalysis(
-    currentPage,
+  const {
+    riskItems,
+    totalGlobalCount,
+    hasFilters,
+    isLoading,
+    status: paginationStatus,
+    loadMore,
+  } = useRiskAnalysis(
     itemsPerPage,
     searchTerm,
     selectedCategory,
     selectedLocations,
   );
+
+  // Professional React 18: Render-Phase State Correction
+  const totalItems = riskItems.length;
+  const isAll = itemsPerPage === "all";
+  const maxPage = isAll
+    ? 1
+    : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
+
+  // Do not reset page if we are currently loading more items from the server
+  const hasMoreToLoad =
+    (paginationStatus === "CanLoadMore" ||
+      paginationStatus === "LoadingMore") &&
+    !hasFilters;
+  if (currentPage > maxPage && !hasMoreToLoad && totalItems > 0) {
+    setCurrentPage(maxPage);
+  }
+
+  // Pagination Logic
+  const safeCurrentPage =
+    currentPage > maxPage ? Math.max(1, maxPage) : currentPage;
+  const startIndex = isAll
+    ? 0
+    : (safeCurrentPage - 1) * (itemsPerPage as number);
+  const endIndex = isAll
+    ? totalItems
+    : Math.min(startIndex + (itemsPerPage as number), totalItems);
+  const currentItems = riskItems.slice(startIndex, endIndex);
 
   // Detail & Move Modal State
   const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
@@ -85,10 +118,6 @@ export default function RiskPage() {
     setCurrentPage(1);
   };
 
-  // Data is already filtered and paginated directly from the server!
-  const currentItems = riskItems || [];
-  const totalItems = totalRiskCount || 0;
-
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">
       {/* Header & Controls */}
@@ -99,10 +128,10 @@ export default function RiskPage() {
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                 Risk Analysis
               </h1>
-              {totalItems > 0 && (
+              {totalGlobalCount > 0 && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 sm:mt-1.5 rounded-full bg-destructive/10 text-destructive text-sm font-bold tracking-wide">
                   <AlertTriangle className="w-4 h-4" />
-                  {totalItems} items with no backup
+                  {totalGlobalCount} items with no backup
                 </span>
               )}
             </div>
@@ -154,19 +183,9 @@ export default function RiskPage() {
           <div className="w-full flex-1 flex flex-col justify-center">
             <EmptyState
               icon={ShieldAlert}
-              title={
-                totalItems === 0 &&
-                !searchTerm &&
-                !selectedCategory &&
-                selectedLocations.length === 0
-                  ? "All Clear!"
-                  : "No results found"
-              }
+              title={totalGlobalCount === 0 ? "All Clear!" : "No results found"}
               description={
-                totalItems === 0 &&
-                !searchTerm &&
-                !selectedCategory &&
-                selectedLocations.length === 0
+                totalGlobalCount === 0
                   ? "Excellent! All your files have backups and are stored in multiple locations."
                   : "Try adjusting your filters or search term."
               }
@@ -214,7 +233,20 @@ export default function RiskPage() {
                   totalItems={totalItems}
                   itemsPerPage={itemsPerPage}
                   currentPage={currentPage}
-                  onPageChange={setCurrentPage}
+                  hasMore={paginationStatus === "CanLoadMore" && !hasFilters}
+                  onPageChange={(newPage) => {
+                    if (itemsPerPage !== "all") {
+                      const newStartIndex = (newPage - 1) * itemsPerPage;
+                      if (
+                        newStartIndex >= riskItems.length &&
+                        paginationStatus === "CanLoadMore" &&
+                        !hasFilters
+                      ) {
+                        loadMore(itemsPerPage);
+                      }
+                    }
+                    setCurrentPage(newPage);
+                  }}
                   onItemsPerPageChange={(val) => {
                     setItemsPerPage(val);
                     setCurrentPage(1);

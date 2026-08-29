@@ -28,9 +28,12 @@ export function Pagination({
     ? 1
     : Math.ceil(totalItems / (itemsPerPage as number));
   const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
+  const expectedEnd = startIndex + (itemsPerPage as number);
   const endIndex = isAll
     ? totalItems
-    : Math.min(startIndex + (itemsPerPage as number), totalItems);
+    : hasMore && expectedEnd > totalItems
+      ? expectedEnd
+      : Math.min(expectedEnd, totalItems);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border/50">

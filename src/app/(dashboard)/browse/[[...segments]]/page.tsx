@@ -143,7 +143,13 @@ export default function BrowsePage() {
     ? 1
     : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
 
-  if (currentPage > maxPage) {
+  // Do not reset page if we are currently loading more items from the server
+  const hasMoreToLoad =
+    (paginationStatus === "CanLoadMore" ||
+      paginationStatus === "LoadingMore") &&
+    !debouncedSearchTerm &&
+    !locationFilterId;
+  if (currentPage > maxPage && !hasMoreToLoad) {
     setCurrentPage(maxPage);
   }
 

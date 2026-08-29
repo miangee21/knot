@@ -131,14 +131,20 @@ export default function TrashPage() {
     (trashData?.categories?.length || 0) +
     (trashData?.locations?.length || 0);
 
-  // Professional React 18: Render-Phase State Correction (No useEffect)
+  // Professional React 18: Render-Phase State Correction (No useEffect)s
   const totalItems = filteredTrash.length;
   const isAll = itemsPerPage === "all";
   const maxPage = isAll
     ? 1
     : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
 
-  if (currentPage > maxPage) {
+  // Do not reset page if we are currently loading more items from the server
+  const hasMoreToLoad =
+    (paginationStatus === "CanLoadMore" ||
+      paginationStatus === "LoadingMore") &&
+    activeTab === "item" &&
+    !debouncedSearch;
+  if (currentPage > maxPage && !hasMoreToLoad) {
     setCurrentPage(maxPage);
   }
 

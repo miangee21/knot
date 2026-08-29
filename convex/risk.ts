@@ -1,6 +1,7 @@
 //convex/risk.ts
 import { v } from "convex/values";
 import { query, QueryCtx } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id, Doc } from "./_generated/dataModel";
 import { ItemDoc } from "../src/features/items/types";
@@ -19,110 +20,154 @@ async function withPosterUrl(
   } as unknown as ItemDoc;
 }
 
-// 1. Get Risk Items (Custom Server-Side Pagination & Filtering)
-export const getRiskItemsPaginated = query({
+// Helper to get folder names for Breadcrumbs (Fast, no posters)
+async function getFolderMap(ctx: QueryCtx, userId: Id<"users">) {
+  const allFolders = await ctx.db
+    .query("items")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .filter((q) =>
+      q.and(
+        q.eq(q.field("deletedAt"), undefined),
+        q.eq(q.field("isFolder"), true),
+      ),
+    )
+    .collect();
+  return new Map(allFolders.map((f) => [f._id, f]));
+}
+
+// Helper to construct breadcrumb path
+function buildRiskPath(
+  parentId: string | null,
+  folderMap: Map<Id<"items">, Doc<"items">>,
+): string {
+  const path = [];
+  let currentId = parentId;
+  while (currentId) {
+    const parent = folderMap.get(currentId as Id<"items">);
+    if (parent) {
+      path.unshift(parent.name);
+      currentId = parent.parentId;
+    } else break;
+  }
+  return ["Home", ...path].join(" > ");
+}
+
+// 1. Native Database Pagination for base Risk Items (O(1) Fetch)
+export const getRiskItems = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { page: [], isDone: true, continueCursor: "" };
+
+    const folderMap = await getFolderMap(ctx, userId);
+
+    const results = await ctx.db
+      .query("items")
+      .withIndex("by_risk", (q) => q.eq("userId", userId).eq("isAtRisk", true))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined)) // Bypass trashed items
+      .paginate(args.paginationOpts);
+
+    const page = await Promise.all(
+      results.page.map(async (item) => {
+        const resolved = await withPosterUrl(ctx, item);
+        return {
+          ...resolved,
+          effectiveLocations: item.locationIds || [],
+          riskPath: buildRiskPath(item.parentId, folderMap),
+        };
+      }),
+    );
+
+    return { ...results, page };
+  },
+});
+
+// 2. Filtered Risk Items (Flat fetch specifically for Search/Category/Location filters)
+export const getFilteredRiskItems = query({
   args: {
-    currentPage: v.number(),
-    itemsPerPage: v.union(v.number(), v.literal("all")),
     searchTerm: v.string(),
     categoryId: v.union(v.string(), v.null()),
     selectedLocations: v.array(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return { items: [], totalCount: 0 };
+    if (!userId) return [];
 
-    // Fetch folder names for Breadcrumbs (Fast, no posters)
-    const allFolders = await ctx.db
-      .query("items")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("deletedAt"), undefined),
-          q.eq(q.field("isFolder"), true),
-        ),
-      )
-      .collect();
-    const folderMap = new Map(allFolders.map((f) => [f._id, f]));
+    const folderMap = await getFolderMap(ctx, userId);
+    let files: Doc<"items">[] = [];
 
-    const getRiskPath = (parentId?: string | null): string => {
-      const path = [];
-      let currentId = parentId;
-      while (currentId) {
-        const parent = folderMap.get(currentId as Id<"items">);
-        if (parent) {
-          path.unshift(parent.name);
-          currentId = parent.parentId;
-        } else break;
-      }
-      return ["Home", ...path].join(" > ");
-    };
-
-    // 1. Native Database Risk Filter (O(1) Fetch using new index)
-    // Server pulls ONLY at-risk files using the native index. Zero load on safe files.
-    const files = await ctx.db
-      .query("items")
-      .withIndex("by_risk", (q) => q.eq("userId", userId).eq("isAtRisk", true))
-      .filter((q) => q.eq(q.field("deletedAt"), undefined)) // Bypass trashed items
-      .collect();
-
-    // Map strongly-typed properties
-    let vulnerableItems = files.map((item) => {
-      return {
-        ...item,
-        // Strict block in trash.ts guarantees that assigned locations are active
-        effectiveLocations: item.locationIds || [],
-        riskPath: getRiskPath(item.parentId),
-      };
-    });
-
-    // 2. Apply Dynamic Search & Filters on Server
+    // Switch between Native Search Index and Risk Index based on searchTerm
     if (args.searchTerm) {
-      const term = args.searchTerm.toLowerCase();
-      vulnerableItems = vulnerableItems.filter(
-        (item) =>
-          item.name.toLowerCase().includes(term) ||
-          (item.riskPath || "").toLowerCase().includes(term),
+      const searchResults = await ctx.db
+        .query("items")
+        .withSearchIndex("search_name", (q) =>
+          q.search("name", args.searchTerm).eq("userId", userId),
+        )
+        .collect();
+      files = searchResults.filter(
+        (i) => i.isAtRisk === true && i.deletedAt === undefined,
       );
+    } else {
+      files = await ctx.db
+        .query("items")
+        .withIndex("by_risk", (q) =>
+          q.eq("userId", userId).eq("isAtRisk", true),
+        )
+        .filter((q) => q.eq(q.field("deletedAt"), undefined))
+        .collect();
     }
+
+    let vulnerableItems = files.map((item) => ({
+      ...item,
+      effectiveLocations: item.locationIds || [],
+      riskPath: buildRiskPath(item.parentId, folderMap),
+    }));
+
+    // Apply Client-Side Filters
     if (args.categoryId) {
       vulnerableItems = vulnerableItems.filter(
-        (item) => item.categoryId === args.categoryId,
+        (i) => i.categoryId === args.categoryId,
       );
     }
     if (args.selectedLocations.length > 0) {
-      vulnerableItems = vulnerableItems.filter((item) =>
+      vulnerableItems = vulnerableItems.filter((i) =>
         args.selectedLocations.some((loc) =>
-          item.effectiveLocations.includes(loc as Id<"locations">),
+          i.effectiveLocations.includes(loc as Id<"locations">),
         ),
       );
     }
-
-    const totalCount = vulnerableItems.length;
-
-    // 3. Apply Custom Server Pagination
-    if (args.itemsPerPage !== "all") {
-      const startIndex = (args.currentPage - 1) * args.itemsPerPage;
-      vulnerableItems = vulnerableItems.slice(
-        startIndex,
-        startIndex + args.itemsPerPage,
+    if (args.searchTerm) {
+      const term = args.searchTerm.toLowerCase();
+      vulnerableItems = vulnerableItems.filter(
+        (i) =>
+          i.name.toLowerCase().includes(term) ||
+          (i.riskPath || "").toLowerCase().includes(term),
       );
     }
 
-    // 4. Resolve Image Posters ONLY for the requested items
-    const paginatedItems = await Promise.all(
+    return await Promise.all(
       vulnerableItems.map(async (item) => {
-        // Safely extract the dynamically added fields before passing to the strict helper
         const { effectiveLocations, riskPath, ...originalItem } = item;
         const resolved = await withPosterUrl(ctx, originalItem as Doc<"items">);
-        return {
-          ...resolved,
-          effectiveLocations,
-          riskPath,
-        };
+        return { ...resolved, effectiveLocations, riskPath };
       }),
     );
+  },
+});
 
-    return { items: paginatedItems, totalCount };
+// 3. Lightweight Global Count for Alert Badge
+export const getRiskCount = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return 0;
+
+    const files = await ctx.db
+      .query("items")
+      .withIndex("by_risk", (q) => q.eq("userId", userId).eq("isAtRisk", true))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .collect();
+
+    return files.length;
   },
 });
