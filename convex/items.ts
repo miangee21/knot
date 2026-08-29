@@ -66,6 +66,12 @@ async function validateReferences(
   }
 }
 
+// Helper for Natural Sorting (e.g., "10" comes after "2")
+function generateSortName(name: string): string {
+  // Pad numbers with leading zeros up to 10 digits
+  return name.toLowerCase().replace(/\d+/g, (match) => match.padStart(10, "0"));
+}
+
 // 1. Create an Item
 export const create = mutation({
   args: {
@@ -100,7 +106,7 @@ export const create = mutation({
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
       isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
-      sortName: args.name.toLowerCase(),
+      sortName: generateSortName(args.name),
     });
   },
 });
@@ -167,7 +173,7 @@ export const update = mutation({
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
       isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
-      sortName: args.name.toLowerCase(),
+      sortName: generateSortName(args.name),
     });
     return args.id;
   },

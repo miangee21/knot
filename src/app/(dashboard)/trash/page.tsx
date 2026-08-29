@@ -12,21 +12,13 @@ import { TrashModals } from "@/features/trash/components/TrashModals";
 import { TrashContentArea } from "@/features/trash/components/TrashContentArea";
 import { ItemDetailSheet } from "@/features/items/components/detail/ItemDetailSheet";
 import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
-
-type TrashType = "item" | "category" | "location";
-type TrashItemBase = {
-  type: TrashType;
-  name: string;
-  _id: string;
-  deletedAt?: number;
-};
-type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
-
-const TAB_CONFIG = [
-  { id: "item" as TrashType, label: "Items", key: "items" },
-  { id: "category" as TrashType, label: "Categories", key: "categories" },
-  { id: "location" as TrashType, label: "Locations", key: "locations" },
-];
+import {
+  useTrashFilters,
+  TrashType,
+  TrashedItem,
+  TAB_CONFIG,
+  TrashDataPayload,
+} from "@/features/trash/hooks/useTrashFilters";
 
 export default function TrashPage() {
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
@@ -65,73 +57,17 @@ export default function TrashPage() {
     null,
   );
 
-  const activeTabData = React.useMemo(() => {
-    if (!trashData) return [];
-    if (activeTab === "item") {
-      const allItems = trashData.items.map((i) => ({
-        ...(i as unknown as ItemDoc),
-        type: "item" as const,
-      }));
-      if (debouncedSearch) return allItems;
-
-      if (currentFolderId) {
-        return allItems.filter((i) => i.parentId === currentFolderId);
-      }
-      return allItems.filter((item) => {
-        if (!item.parentId) return true;
-        const isParentInTrash = allItems.some((i) => i._id === item.parentId);
-        return !isParentInTrash;
-      });
-    }
-    if (activeTab === "category")
-      return trashData.categories.map((c) => ({
-        ...(c as unknown as CategoryDoc),
-        type: "category" as const,
-      }));
-    if (activeTab === "location")
-      return trashData.locations.map((l) => ({
-        ...(l as unknown as LocationDoc),
-        type: "location" as const,
-      }));
-    return [];
-  }, [trashData, activeTab, debouncedSearch, currentFolderId]);
-
-  const filteredTrash = React.useMemo(() => {
-    if (!debouncedSearch) return activeTabData;
-    // Server has already filtered items via global search!
-    if (activeTab === "item") return activeTabData;
-
-    // Fallback for categories/locations
-    return activeTabData.filter((item: TrashedItem) =>
-      item.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
+  const { activeTabData, filteredTrash, totalTrashCount, handleBackFolder } =
+    useTrashFilters(
+      trashData as unknown as TrashDataPayload,
+      activeTab,
+      debouncedSearch,
+      currentFolderId,
+      setCurrentPage,
+      setCurrentFolderId,
     );
-  }, [activeTabData, debouncedSearch, activeTab]);
 
-  // Safe state sync during render (React 18 recommended way to avoid effect cascades)
-  const [prevDeps, setPrevDeps] = React.useState({
-    search: debouncedSearch,
-    tab: activeTab,
-    folder: currentFolderId,
-  });
-  if (
-    prevDeps.search !== debouncedSearch ||
-    prevDeps.tab !== activeTab ||
-    prevDeps.folder !== currentFolderId
-  ) {
-    setCurrentPage(1);
-    setPrevDeps({
-      search: debouncedSearch,
-      tab: activeTab,
-      folder: currentFolderId,
-    });
-  }
-
-  const totalTrashCount =
-    (trashData?.items?.length || 0) +
-    (trashData?.categories?.length || 0) +
-    (trashData?.locations?.length || 0);
-
-  // Professional React 18: Render-Phase State Correction (No useEffect)s
+  // Professional React 18: Render-Phase State Correction (No useEffect)
   const totalItems = filteredTrash.length;
   const isAll = itemsPerPage === "all";
   const maxPage = isAll
@@ -144,12 +80,12 @@ export default function TrashPage() {
       paginationStatus === "LoadingMore") &&
     activeTab === "item" &&
     !debouncedSearch;
-  if (currentPage > maxPage && !hasMoreToLoad) {
-    setCurrentPage(maxPage);
-  }
 
-  // Pagination Logic
-  const safeCurrentPage = currentPage > maxPage ? maxPage : currentPage;
+  // Professional React 18: Derive state during render instead of forced state updates
+  const safeCurrentPage =
+    currentPage > maxPage && !hasMoreToLoad
+      ? Math.max(1, maxPage)
+      : currentPage;
   const startIndex = isAll
     ? 0
     : (safeCurrentPage - 1) * (itemsPerPage as number);
@@ -181,17 +117,6 @@ export default function TrashPage() {
     totalItems,
     currentPage,
   ]);
-
-  const handleBackFolder = () => {
-    const current = trashData?.items.find((i) => i._id === currentFolderId);
-    if (current && current.parentId) {
-      const parentInTrash = trashData?.items.find(
-        (i) => i._id === current.parentId,
-      );
-      if (parentInTrash) return setCurrentFolderId(current.parentId);
-    }
-    setCurrentFolderId(null);
-  };
 
   const onConfirmDelete = async () => {
     if (!itemToDelete) return;
@@ -265,7 +190,7 @@ export default function TrashPage() {
             currentItems={currentItems}
             totalItems={totalItems}
             itemsPerPage={itemsPerPage}
-            currentPage={currentPage}
+            currentPage={safeCurrentPage}
             setCurrentPage={(newPage) => {
               if (itemsPerPage !== "all" && activeTab === "item") {
                 const newStartIndex = (newPage - 1) * itemsPerPage;

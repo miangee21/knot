@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore Convex auto-generated types and API files
+    "convex/_generated/**",
   ]),
 ]);
 

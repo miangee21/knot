@@ -70,13 +70,12 @@ export default function RiskPage() {
     (paginationStatus === "CanLoadMore" ||
       paginationStatus === "LoadingMore") &&
     !hasFilters;
-  if (currentPage > maxPage && !hasMoreToLoad && totalItems > 0) {
-    setCurrentPage(maxPage);
-  }
 
-  // Pagination Logic
+  // Professional React 18: Derive state during render instead of forced state updates
   const safeCurrentPage =
-    currentPage > maxPage ? Math.max(1, maxPage) : currentPage;
+    currentPage > maxPage && !hasMoreToLoad && totalItems > 0
+      ? maxPage
+      : currentPage;
   const startIndex = isAll
     ? 0
     : (safeCurrentPage - 1) * (itemsPerPage as number);
@@ -232,7 +231,7 @@ export default function RiskPage() {
                 <Pagination
                   totalItems={totalItems}
                   itemsPerPage={itemsPerPage}
-                  currentPage={currentPage}
+                  currentPage={safeCurrentPage}
                   hasMore={paginationStatus === "CanLoadMore" && !hasFilters}
                   onPageChange={(newPage) => {
                     if (itemsPerPage !== "all") {

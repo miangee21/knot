@@ -8,8 +8,7 @@ import { Plus, PackageOpen } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { Pagination } from "@/shared/components/Pagination";
-import { ItemFormData, ItemDoc } from "@/features/items/types";
-import { toast } from "sonner";
+import { ItemDoc } from "@/features/items/types";
 // Browser UI Components
 import { BrowseHeader } from "@/features/items/components/browser/BrowseHeader";
 import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
@@ -18,16 +17,15 @@ import { BrowseModals } from "@/features/items/components/browser/BrowseModals";
 // Hooks
 import { useItemChildren } from "@/features/items/hooks/useItemChildren";
 import { useItemAncestors } from "@/features/items/hooks/useItemAncestors";
-import { useCreateItem } from "@/features/items/hooks/useCreateItem";
-import { useUpdateItem } from "@/features/items/hooks/useUpdateItem";
-import { useDeleteItem } from "@/features/items/hooks/useDeleteItem";
 import { useViewPreference } from "@/features/items/hooks/useViewPreference";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { Id } from "../../../../../convex/_generated/dataModel";
-import { api } from "../../../../../convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import {
+  useBrowseFilters,
+  useBrowseMutations,
+} from "@/features/items/hooks/useBrowseLogic";
 
 export default function BrowsePage() {
   // Navigation & Route State
@@ -74,20 +72,6 @@ export default function BrowsePage() {
     return Array.from(locSet);
   }, [ancestors]);
 
-  const { handleCreate } = useCreateItem();
-  const { handleUpdate } = useUpdateItem();
-  const { handleDelete } = useDeleteItem();
-  const generateUploadUrl = useMutation(api.items.generateUploadUrl);
-  const deleteStorage = useMutation(api.items.deleteStorage);
-
-  // Form & Modals State
-  const [isFormOpen, setIsFormOpen] = React.useState(false);
-  const [editingItem, setEditingItem] = React.useState<ItemDoc | null>(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [itemToDelete, setItemToDelete] = React.useState<ItemDoc | null>(null);
-  const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
-  const [movingItem, setMovingItem] = React.useState<ItemDoc | null>(null);
-
   // Search State
   const [searchTerm, setSearchTerm] = React.useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -97,74 +81,36 @@ export default function BrowsePage() {
     setCurrentPage(1);
   }, []);
 
-  // Global Search Query (Searches whole DB when searchTerm exists)
-  const searchResults = useQuery(
-    api.items.search,
-    debouncedSearchTerm ? { query: debouncedSearchTerm } : "skip",
-  );
+  // Custom Hook: Modals & Mutations
+  const {
+    isFormOpen,
+    setIsFormOpen,
+    editingItem,
+    setEditingItem,
+    isSubmitting,
+    itemToDelete,
+    setItemToDelete,
+    detailItem,
+    setDetailItem,
+    movingItem,
+    setMovingItem,
+    openNewDialog,
+    handleItemClick,
+    onFormSubmit,
+    onConfirmDelete,
+  } = useBrowseMutations();
 
-  // Global Location Query (Fetches all items to filter globally)
-  const allItemsFlat = useQuery(
-    api.items.getAllItemsFlat,
-    locationFilterId && !debouncedSearchTerm ? {} : "skip",
-  );
-
-  const isSearching =
-    (debouncedSearchTerm.length > 0 && searchResults === undefined) ||
-    searchTerm !== debouncedSearchTerm ||
-    (locationFilterId && !debouncedSearchTerm && allItemsFlat === undefined);
-
-  // Search Filter Logic (Global vs Local)
-  const filteredItems = React.useMemo(() => {
-    let baseItems = items || [];
-
-    if (debouncedSearchTerm) {
-      baseItems = searchResults || [];
-    } else if (locationFilterId) {
-      baseItems = allItemsFlat || [];
-    }
-
-    // Smart Dependency Filter: Show only items using this specific location
-    if (locationFilterId) {
-      baseItems = baseItems.filter(
-        (item) =>
-          item && (item.locationIds as string[]).includes(locationFilterId),
-      );
-    }
-
-    return baseItems;
-  }, [
-    items,
-    searchResults,
-    locationFilterId,
-    allItemsFlat,
-    debouncedSearchTerm,
-  ]);
-
-  // Professional React 18: Render-Phase State Correction (No useEffect)
-  const totalItems = filteredItems.length;
-  const isAll = itemsPerPage === "all";
-  const maxPage = isAll
-    ? 1
-    : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
-
-  // Do not reset page if we are currently loading more items from the server
-  const hasMoreToLoad =
-    (paginationStatus === "CanLoadMore" ||
-      paginationStatus === "LoadingMore") &&
-    !debouncedSearchTerm &&
-    !locationFilterId;
-
-  // Professional React 18: Derive state during render instead of using an Effect
-  const safeCurrentPage =
-    currentPage > maxPage && !hasMoreToLoad ? maxPage : currentPage;
-  const startIndex = isAll
-    ? 0
-    : (safeCurrentPage - 1) * (itemsPerPage as number);
-  const endIndex = isAll
-    ? totalItems
-    : Math.min(startIndex + (itemsPerPage as number), totalItems);
-  const currentItems = filteredItems.slice(startIndex, endIndex);
+  // Custom Hook: Filters & Pagination
+  const { isSearching, totalItems, safeCurrentPage, currentItems } =
+    useBrowseFilters(
+      items,
+      locationFilterId,
+      searchTerm,
+      debouncedSearchTerm,
+      itemsPerPage,
+      currentPage,
+      paginationStatus,
+    );
 
   // Auto-fill page if items are deleted and we have more in DB to show
   React.useEffect(() => {
@@ -189,80 +135,6 @@ export default function BrowsePage() {
     totalItems,
     currentPage,
   ]);
-
-  // Handlers
-  const openNewDialog = () => {
-    setEditingItem(null);
-    setIsFormOpen(true);
-  };
-
-  const handleItemClick = (item: ItemDoc) => {
-    setDetailItem(item);
-  };
-
-  const onFormSubmit = async (data: ItemFormData) => {
-    setIsSubmitting(true);
-    let newlyUploadedStorageId: Id<"_storage"> | undefined = undefined;
-
-    try {
-      let posterStorageId = undefined;
-      // 1. Native Convex Storage Upload
-      if (data.poster instanceof File) {
-        const postUrl = await generateUploadUrl();
-        const result = await fetch(postUrl, {
-          method: "POST",
-          headers: { "Content-Type": data.poster.type },
-          body: data.poster,
-        });
-        if (!result.ok) {
-          throw new Error(`Failed to upload image. Status: ${result.status}`);
-        }
-        const { storageId } = await result.json();
-        posterStorageId = storageId;
-        newlyUploadedStorageId = storageId; // Track for rollback
-      } else if (
-        typeof data.poster === "string" &&
-        editingItem?.posterStorageId
-      ) {
-        // Keep existing storage ID if not changed
-        posterStorageId = editingItem.posterStorageId;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { poster, ...cleanData } = data;
-      const payload = {
-        ...cleanData,
-        posterStorageId,
-      };
-
-      try {
-        if (editingItem)
-          await handleUpdate(editingItem._id as Id<"items">, payload);
-        else await handleCreate(payload);
-      } catch (dbError) {
-        if (newlyUploadedStorageId) {
-          await deleteStorage({ storageId: newlyUploadedStorageId });
-        }
-        throw dbError;
-      }
-
-      setIsFormOpen(false);
-      toast.success(editingItem ? "Item updated!" : "Item created!");
-    } catch {
-      toast.error("Failed to save item. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const onConfirmDelete = async () => {
-    if (!itemToDelete) return;
-    try {
-      await handleDelete(itemToDelete._id as Id<"items">);
-      setItemToDelete(null);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">

@@ -66,9 +66,7 @@ export function ItemFormDialog({
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchName = watch("name");
-   
   const watchSize = watch("sizeBytes");
-   
   const watchLocations = watch("locationIds");
   const effectiveLocations = Array.from(
     new Set([...(watchLocations || []), ...(inheritedLocationIds || [])]),

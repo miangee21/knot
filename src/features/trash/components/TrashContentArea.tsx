@@ -74,6 +74,7 @@ export function TrashContentArea({
   if (activeTabDataLength === 0) {
     return (
       <EmptyState
+        className="min-h-84"
         icon={Trash2}
         title={`No deleted ${activeTab === "item" ? "items" : activeTab === "category" ? "categories" : "locations"}`}
         description={`Your recycle bin is clear of ${activeTab === "item" ? "items" : activeTab === "category" ? "categories" : "locations"}.`}
@@ -84,6 +85,7 @@ export function TrashContentArea({
   if (filteredTrashLength === 0) {
     return (
       <EmptyState
+        className="min-h-84"
         icon={XCircle}
         title="No results found"
         description="Try adjusting your search or filters."
