@@ -63,8 +63,11 @@ export const getRiskItems = query({
 
     const results = await ctx.db
       .query("items")
-      .withIndex("by_risk", (q) => q.eq("userId", userId).eq("isAtRisk", true))
+      .withIndex("by_risk_sort", (q) =>
+        q.eq("userId", userId).eq("isAtRisk", true),
+      )
       .filter((q) => q.eq(q.field("deletedAt"), undefined)) // Bypass trashed items
+      .order("asc")
       .paginate(args.paginationOpts);
 
     const page = await Promise.all(

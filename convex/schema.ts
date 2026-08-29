@@ -53,10 +53,14 @@ export default defineSchema({
 
     deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
     isAtRisk: v.optional(v.boolean()), // Write-Time Computed Flag
+    sortName: v.string(), // Lowercase name for Case-Insensitive A-Z Sorting
   })
     .index("by_user", ["userId"])
     .index("by_parent", ["parentId", "userId"])
     .index("by_risk", ["userId", "isAtRisk"])
+    .index("by_parent_sort", ["parentId", "userId", "sortName"])
+    .index("by_risk_sort", ["userId", "isAtRisk", "sortName"])
+    .index("by_user_sort", ["userId", "sortName"])
     .searchIndex("search_name", {
       searchField: "name",
       filterFields: ["userId"],

@@ -100,6 +100,7 @@ export const create = mutation({
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
       isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
+      sortName: args.name.toLowerCase(),
     });
   },
 });
@@ -166,6 +167,7 @@ export const update = mutation({
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
       isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
+      sortName: args.name.toLowerCase(),
     });
     return args.id;
   },
@@ -197,10 +199,11 @@ export const getChildren = query({
 
     const results = await ctx.db
       .query("items")
-      .withIndex("by_parent", (q) =>
+      .withIndex("by_parent_sort", (q) =>
         q.eq("parentId", args.parentId).eq("userId", userId),
       )
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .order("asc")
       .paginate(args.paginationOpts);
 
     const page = await Promise.all(

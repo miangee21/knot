@@ -91,9 +91,9 @@ export const getTrashItems = query({
 
     const results = await ctx.db
       .query("items")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_sort", (q) => q.eq("userId", userId)) // A-Z Index use kiya
       .filter((q) => q.neq(q.field("deletedAt"), undefined))
-      .order("desc")
+      .order("asc")
       .paginate(args.paginationOpts);
 
     const page = await Promise.all(
