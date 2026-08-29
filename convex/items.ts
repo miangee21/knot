@@ -66,10 +66,14 @@ async function validateReferences(
   }
 }
 
-// Helper for Natural Sorting (e.g., "10" comes after "2")
-function generateSortName(name: string): string {
+// Helper for Natural Sorting + Folders First
+function generateSortName(name: string, isFolder: boolean): string {
   // Pad numbers with leading zeros up to 10 digits
-  return name.toLowerCase().replace(/\d+/g, (match) => match.padStart(10, "0"));
+  const paddedName = name
+    .toLowerCase()
+    .replace(/\d+/g, (match) => match.padStart(10, "0"));
+  // Prefix '0_' for folders and '1_' for files to force folders to appear first
+  return isFolder ? `0_${paddedName}` : `1_${paddedName}`;
 }
 
 // 1. Create an Item
@@ -106,7 +110,7 @@ export const create = mutation({
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
       isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
-      sortName: generateSortName(args.name),
+      sortName: generateSortName(args.name, args.isFolder ?? false),
     });
   },
 });
@@ -173,7 +177,7 @@ export const update = mutation({
       posterStorageId: args.posterStorageId ?? undefined,
       notes: args.notes ?? undefined,
       isAtRisk: args.isFolder !== true && args.locationIds.length === 1,
-      sortName: generateSortName(args.name),
+      sortName: generateSortName(args.name, args.isFolder ?? false),
     });
     return args.id;
   },
