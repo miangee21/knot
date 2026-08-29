@@ -1,9 +1,9 @@
 //convex/trash.ts
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 // 1. Move to Bin (Soft Delete)
 export const moveToBin = mutation({
@@ -28,25 +28,17 @@ export const moveToBin = mutation({
       const item = await ctx.db.get(itemId);
       if (!item || item.userId !== userId) throw new Error("Not found");
 
-      // Cascade Soft-Delete for folders
-      const softDeleteDescendants = async (parentId: Id<"items">) => {
-        const children = await ctx.db
-          .query("items")
-          .withIndex("by_parent", (q) =>
-            q.eq("parentId", parentId).eq("userId", userId),
-          )
-          .collect();
-
-        for (const child of children) {
-          if (child.deletedAt === undefined) {
-            await ctx.db.patch(child._id, { deletedAt: now });
-            await softDeleteDescendants(child._id); // Recursive
-          }
-        }
-      };
-
       await ctx.db.patch(itemId, { deletedAt: now });
-      await softDeleteDescendants(itemId);
+      // Background Scheduler: Process descendants securely without blocking UI
+      await ctx.scheduler.runAfter(
+        0,
+        internal.trash.softDeleteDescendantsBatch,
+        {
+          parentId: itemId,
+          userId,
+          deletedAt: now,
+        },
+      );
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
       if (!catId) return;
@@ -191,25 +183,12 @@ export const restore = mutation({
         currentParentId = parent?.parentId || null;
       }
 
-      // CASCADE RESTORE FOR DESCENDANTS
-      const restoreDescendants = async (parentId: Id<"items">) => {
-        const children = await ctx.db
-          .query("items")
-          .withIndex("by_parent", (q) =>
-            q.eq("parentId", parentId).eq("userId", userId),
-          )
-          .collect();
-
-        for (const child of children) {
-          if (child.deletedAt !== undefined) {
-            await ctx.db.patch(child._id, { deletedAt: undefined });
-            await restoreDescendants(child._id); // Recursive
-          }
-        }
-      };
-
       await ctx.db.patch(itemId, { deletedAt: undefined });
-      await restoreDescendants(itemId);
+      // Background Scheduler: Process descendants securely without blocking UI
+      await ctx.scheduler.runAfter(0, internal.trash.restoreDescendantsBatch, {
+        parentId: itemId,
+        userId,
+      });
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
       if (!catId) return;
@@ -253,31 +232,21 @@ export const hardDelete = mutation({
       }
 
       if (item && item.userId === userId) {
-        // CASCADE HARD-DELETE FOR DESCENDANTS
-        const hardDeleteDescendants = async (parentId: Id<"items">) => {
-          const children = await ctx.db
-            .query("items")
-            .withIndex("by_parent", (q) =>
-              q.eq("parentId", parentId).eq("userId", userId),
-            )
-            .collect();
-
-          for (const child of children) {
-            if (child.posterStorageId) {
-              await ctx.storage.delete(child.posterStorageId);
-            }
-            await ctx.db.delete(child._id);
-            await hardDeleteDescendants(child._id); // Recursive call
-          }
-        };
-
         // Delete parent image from Convex Storage if it exists
         if (item.posterStorageId) {
           await ctx.storage.delete(item.posterStorageId);
         }
 
         await ctx.db.delete(itemId);
-        await hardDeleteDescendants(itemId);
+        // Background Scheduler: Securely wipe storage and docs without timeout
+        await ctx.scheduler.runAfter(
+          0,
+          internal.trash.hardDeleteDescendantsBatch,
+          {
+            parentId: itemId,
+            userId,
+          },
+        );
       }
     } else if (args.type === "category") {
       const catId = ctx.db.normalizeId("categories", args.id);
@@ -369,6 +338,110 @@ export const emptyBin = mutation({
 
     for (const loc of locations) {
       await ctx.db.delete(loc._id);
+    }
+  },
+});
+
+// --- BACKGROUND WORKERS (Internal Mutations for Safe Recursion) ---
+
+export const softDeleteDescendantsBatch = internalMutation({
+  args: {
+    parentId: v.id("items"),
+    userId: v.id("users"),
+    deletedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const children = await ctx.db
+      .query("items")
+      .withIndex("by_parent", (q) =>
+        q.eq("parentId", args.parentId).eq("userId", args.userId),
+      )
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .take(100);
+
+    for (const child of children) {
+      await ctx.db.patch(child._id, { deletedAt: args.deletedAt });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.trash.softDeleteDescendantsBatch,
+        {
+          parentId: child._id,
+          userId: args.userId,
+          deletedAt: args.deletedAt,
+        },
+      );
+    }
+
+    if (children.length === 100) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.trash.softDeleteDescendantsBatch,
+        args,
+      );
+    }
+  },
+});
+
+export const restoreDescendantsBatch = internalMutation({
+  args: { parentId: v.id("items"), userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const children = await ctx.db
+      .query("items")
+      .withIndex("by_parent", (q) =>
+        q.eq("parentId", args.parentId).eq("userId", args.userId),
+      )
+      .filter((q) => q.neq(q.field("deletedAt"), undefined))
+      .take(100);
+
+    for (const child of children) {
+      await ctx.db.patch(child._id, { deletedAt: undefined });
+      await ctx.scheduler.runAfter(0, internal.trash.restoreDescendantsBatch, {
+        parentId: child._id,
+        userId: args.userId,
+      });
+    }
+
+    if (children.length === 100) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.trash.restoreDescendantsBatch,
+        args,
+      );
+    }
+  },
+});
+
+export const hardDeleteDescendantsBatch = internalMutation({
+  args: { parentId: v.id("items"), userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const children = await ctx.db
+      .query("items")
+      .withIndex("by_parent", (q) =>
+        q.eq("parentId", args.parentId).eq("userId", args.userId),
+      )
+      .take(100);
+
+    for (const child of children) {
+      if (child.posterStorageId) {
+        await ctx.storage.delete(child.posterStorageId);
+      }
+      await ctx.db.delete(child._id);
+      await ctx.scheduler.runAfter(
+        0,
+        internal.trash.hardDeleteDescendantsBatch,
+        {
+          parentId: child._id,
+          userId: args.userId,
+        },
+      );
+    }
+
+    if (children.length === 100) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.trash.hardDeleteDescendantsBatch,
+        args,
+      );
     }
   },
 });
