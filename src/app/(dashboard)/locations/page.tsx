@@ -52,6 +52,11 @@ export default function LocationsPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
 
+  const handleSearchChange = React.useCallback((term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+  }, []);
+
   // Modals & Forms State
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingLocation, setEditingLocation] =
@@ -70,13 +75,6 @@ export default function LocationsPage() {
       loc.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()),
     );
   }, [locations, debouncedSearchTerm]);
-
-  // Prevent effect loops by caching the previous search term safely
-  const [prevSearch, setPrevSearch] = React.useState(debouncedSearchTerm);
-  if (prevSearch !== debouncedSearchTerm) {
-    setPrevSearch(debouncedSearchTerm);
-    setCurrentPage(1);
-  }
 
   // Pagination Math
   const totalItems = filteredLocations.length;
@@ -135,7 +133,7 @@ export default function LocationsPage() {
       <LocationHeader
         hasLocations={!!locations && locations.length > 0}
         searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
+        setSearchTerm={handleSearchChange}
         view={activeView}
         handleViewChange={handleViewChange}
         openNewDialog={openNewDialog}
@@ -166,7 +164,7 @@ export default function LocationsPage() {
             action={
               <Button
                 variant="outline"
-                onClick={() => setSearchTerm("")}
+                onClick={() => handleSearchChange("")}
                 className="rounded-full px-6 h-11 font-semibold border-border/80 hover:bg-muted"
               >
                 Clear Search

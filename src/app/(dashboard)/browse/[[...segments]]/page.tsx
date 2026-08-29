@@ -92,6 +92,11 @@ export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+  const handleSearchChange = React.useCallback((term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+  }, []);
+
   // Global Search Query (Searches whole DB when searchTerm exists)
   const searchResults = useQuery(
     api.items.search,
@@ -149,12 +154,10 @@ export default function BrowsePage() {
       paginationStatus === "LoadingMore") &&
     !debouncedSearchTerm &&
     !locationFilterId;
-  if (currentPage > maxPage && !hasMoreToLoad) {
-    setCurrentPage(maxPage);
-  }
 
-  // Pagination Logic
-  const safeCurrentPage = currentPage > maxPage ? maxPage : currentPage;
+  // Professional React 18: Derive state during render instead of using an Effect
+  const safeCurrentPage =
+    currentPage > maxPage && !hasMoreToLoad ? maxPage : currentPage;
   const startIndex = isAll
     ? 0
     : (safeCurrentPage - 1) * (itemsPerPage as number);
@@ -186,13 +189,6 @@ export default function BrowsePage() {
     totalItems,
     currentPage,
   ]);
-
-  // Prevent effect loops by caching the previous search term safely
-  const [prevSearch, setPrevSearch] = React.useState(debouncedSearchTerm);
-  if (prevSearch !== debouncedSearchTerm) {
-    setPrevSearch(debouncedSearchTerm);
-    setCurrentPage(1);
-  }
 
   // Handlers
   const openNewDialog = () => {
@@ -277,7 +273,7 @@ export default function BrowsePage() {
         ancestorsLoading={ancestorsLoading}
         items={(items || []).filter((i): i is ItemDoc => i !== null)}
         searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
+        setSearchTerm={handleSearchChange}
         viewMode={viewMode}
         setViewMode={setViewMode}
         openNewDialog={openNewDialog}
@@ -349,7 +345,7 @@ export default function BrowsePage() {
                 <Pagination
                   totalItems={totalItems}
                   itemsPerPage={itemsPerPage}
-                  currentPage={currentPage}
+                  currentPage={safeCurrentPage}
                   hasMore={
                     paginationStatus === "CanLoadMore" &&
                     !debouncedSearchTerm &&
