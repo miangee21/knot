@@ -43,12 +43,9 @@ export function LocationMultiSelect({
     }
   };
 
-  // Separate inherited vs explicitly selected locations
-  const inheritedLocations = allLocations.filter((loc) =>
-    inheritedIds.includes(loc._id),
-  );
-  const explicitLocations = allLocations.filter(
-    (loc) => selectedIds.includes(loc._id) && !inheritedIds.includes(loc._id),
+  // Get all currently selected locations
+  const selectedLocations = allLocations.filter((loc) =>
+    selectedIds.includes(loc._id),
   );
 
   return (
@@ -83,28 +80,26 @@ export function LocationMultiSelect({
                     return (
                       <CommandItem
                         key={location._id}
-                        onSelect={() => {
-                          if (!isInherited) toggleLocation(location._id);
-                        }}
+                        onSelect={() => toggleLocation(location._id)}
                         className={cn(
-                          "rounded-xl my-1 font-medium",
-                          isInherited
-                            ? "opacity-50 cursor-not-allowed bg-muted/30"
-                            : "cursor-pointer hover:bg-muted",
+                          "rounded-xl my-1 font-medium cursor-pointer hover:bg-muted",
+                          isInherited &&
+                            !selectedIds.includes(location._id) &&
+                            "bg-muted/30",
                         )}
                       >
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4 text-primary",
-                            selectedIds.includes(location._id) || isInherited
+                            selectedIds.includes(location._id)
                               ? "opacity-100"
                               : "opacity-0",
                           )}
                         />
                         {location.name}
                         {isInherited && (
-                          <span className="ml-auto text-xs italic text-muted-foreground">
-                            Locked
+                          <span className="ml-auto text-xs italic text-muted-foreground opacity-60">
+                            Suggested
                           </span>
                         )}
                       </CommandItem>
@@ -117,32 +112,29 @@ export function LocationMultiSelect({
         </Popover>
 
         {/* Live Resolved Badges Inline */}
-        {(inheritedLocations.length > 0 || explicitLocations.length > 0) && (
+        {selectedLocations.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            {/* 1. Show locked inherited locations always */}
-            {inheritedLocations.map((loc) => (
-              <div
-                key={`inherited-${loc._id}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-muted/50 text-muted-foreground border border-border/50"
-              >
-                <MapPin className="w-3 h-3 opacity-50" />
-                {loc.name}
-                <span className="text-[10px] lowercase italic opacity-60 ml-0.5">
-                  (inherited)
-                </span>
-              </div>
-            ))}
-
-            {/* 2. Show explicitly selected locations */}
-            {explicitLocations.map((loc) => (
-              <div
-                key={`explicit-${loc._id}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary/10 text-primary border border-primary/20"
-              >
-                <MapPin className="w-3 h-3" />
-                {loc.name}
-              </div>
-            ))}
+            {selectedLocations.map((loc) => {
+              const isInherited = inheritedIds.includes(loc._id);
+              return (
+                <div
+                  key={`selected-${loc._id}`}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border cursor-pointer hover:opacity-80",
+                    isInherited
+                      ? "bg-muted/50 text-muted-foreground border-border/50"
+                      : "bg-primary/10 text-primary border-primary/20",
+                  )}
+                  onClick={() => toggleLocation(loc._id)}
+                  title="Click to remove"
+                >
+                  <MapPin
+                    className={cn("w-3 h-3", isInherited && "opacity-50")}
+                  />
+                  {loc.name}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

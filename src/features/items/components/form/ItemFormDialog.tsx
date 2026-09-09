@@ -67,15 +67,13 @@ export function ItemFormDialog({
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchName = watch("name");
   const watchSize = watch("sizeBytes");
-  const watchLocations = watch("locationIds");
-  const effectiveLocations = Array.from(
-    new Set([...(watchLocations || []), ...(inheritedLocationIds || [])]),
-  );
+  const watchLocations = watch("locationIds") || [];
+
   const isFormValid =
     !!watchName &&
     watchSize !== undefined &&
     watchSize !== null &&
-    effectiveLocations.length > 0;
+    watchLocations.length > 0;
 
   React.useEffect(() => {
     if (isOpen) {
@@ -119,13 +117,7 @@ export function ItemFormDialog({
         <form
           onSubmit={handleSubmit(
             (data) => {
-              const mergedLocations = Array.from(
-                new Set([
-                  ...(data.locationIds || []),
-                  ...(inheritedLocationIds || []),
-                ]),
-              );
-              onSubmit({ ...data, locationIds: mergedLocations });
+              onSubmit({ ...data, locationIds: data.locationIds || [] });
             },
             (errors) => {
               if (errors.poster?.message) {

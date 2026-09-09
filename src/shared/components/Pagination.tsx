@@ -54,7 +54,7 @@ export function Pagination({
             <option value={20}>20</option>
             <option value={30}>30</option>
             <option value={50}>50</option>
-            <option value="all">All</option>
+            {/* <option value="all">All</option> */}
           </select>
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg

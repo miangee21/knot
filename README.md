@@ -15,7 +15,7 @@
 
 </div>
 
-<img src=".github/assets/hero.png" alt="Knot preview" width="100%" />
+<img src=".github/assets/hero.webp" alt="Knot preview" width="100%" />
 
 ## Overview
 

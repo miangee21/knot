@@ -8,12 +8,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
+    <div className="h-dvh flex flex-col bg-background selection:bg-primary/20 overflow-hidden">
       {/* Imported Slim Navbar */}
       <Navbar />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full relative">
+      <main className="flex-1 w-full relative overflow-y-auto custom-scrollbar">
         {/* Subtle background glow for the dashboard area */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-75 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
