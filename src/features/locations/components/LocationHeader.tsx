@@ -33,7 +33,7 @@ export function LocationHeader({
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+      <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto md:mt-10">
         {/* Search Bar */}
         {hasLocations && (
           <SearchBar

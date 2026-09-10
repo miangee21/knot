@@ -9,43 +9,48 @@ export type RiskItemDoc = ItemDoc & {
 };
 
 export function useRiskAnalysis(
-  itemsPerPage: number | "all",
+  itemsPerPage: number = 10,
   searchTerm: string,
   categoryId: string | null,
   selectedLocations: string[],
 ) {
-  const initialNumItems = itemsPerPage === "all" ? 10000 : itemsPerPage;
+  const storageKey = `knot_pagination_risk`;
+  const savedLimit =
+    typeof window !== "undefined"
+      ? Number(sessionStorage.getItem(storageKey))
+      : 0;
+  const initialNumItems = savedLimit > itemsPerPage ? savedLimit : itemsPerPage;
+
   const hasFilters =
     searchTerm !== "" || categoryId !== null || selectedLocations.length > 0;
 
+  // Unified Paginated Query for everything (Search, Filters, Base)
   const {
-    results: paginatedItems,
+    results: riskItems,
     status,
-    loadMore,
-  } = usePaginatedQuery(api.risk.getRiskItems, {}, { initialNumItems });
-
-  const filteredItems = useQuery(
-    api.risk.getFilteredRiskItems,
-    hasFilters ? { searchTerm, categoryId, selectedLocations } : "skip",
+    loadMore: convexLoadMore,
+  } = usePaginatedQuery(
+    api.risk.getRiskItems,
+    { searchTerm, categoryId, selectedLocations },
+    { initialNumItems },
   );
 
+  const loadMore = (count: number) => {
+    convexLoadMore(count);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        storageKey,
+        String((riskItems?.length || 0) + count),
+      );
+    }
+  };
+
   const globalCount = useQuery(api.risk.getRiskCount);
-
-  const riskItems =
-    hasFilters && filteredItems !== undefined
-      ? filteredItems
-      : paginatedItems || [];
-
   const totalGlobalCount = globalCount ?? 0;
-
-  const isSearchLoading = hasFilters && filteredItems === undefined;
-  const isLoading =
-    status === "LoadingFirstPage" ||
-    isSearchLoading ||
-    globalCount === undefined;
+  const isLoading = status === "LoadingFirstPage" || globalCount === undefined;
 
   return {
-    riskItems: riskItems as RiskItemDoc[],
+    riskItems: (riskItems || []) as RiskItemDoc[],
     totalGlobalCount,
     hasFilters,
     isLoading,

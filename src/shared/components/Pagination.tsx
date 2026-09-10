@@ -1,65 +1,58 @@
 //src/shared/components/Pagination.tsx
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import * as React from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
 interface PaginationProps {
-  totalItems: number;
-  itemsPerPage: number | "all";
-  currentPage: number;
-  onPageChange: (page: number) => void;
-  onItemsPerPageChange: (val: number | "all") => void;
+  itemsPerPage: number;
+  onItemsPerPageChange: (val: number) => void;
+  onLoadMore: () => void;
   hasMore?: boolean;
 }
 
 export function Pagination({
-  totalItems,
   itemsPerPage,
-  currentPage,
-  onPageChange,
   onItemsPerPageChange,
+  onLoadMore,
   hasMore = false,
 }: PaginationProps) {
-  if (totalItems <= 5 && !hasMore) return null;
+  const [isSpinning, setIsSpinning] = React.useState(false);
 
-  const isAll = itemsPerPage === "all";
-  const totalPages = isAll
-    ? 1
-    : Math.ceil(totalItems / (itemsPerPage as number));
-  const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
-  const expectedEnd = startIndex + (itemsPerPage as number);
-  const endIndex = isAll
-    ? totalItems
-    : hasMore && expectedEnd > totalItems
-      ? expectedEnd
-      : Math.min(expectedEnd, totalItems);
+  if (!hasMore) return null;
+
+  const handleLoadMore = () => {
+    setIsSpinning(true);
+    setTimeout(() => {
+      onLoadMore();
+      setIsSpinning(false);
+    }, 350);
+  };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border/50">
-      {/* Left: Items per page dropdown */}
-      <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
-        <span>Show</span>
+    <div className="relative flex w-full items-center justify-center py-4 mb-4">
+      {/* Dropdown locked to bottom-left */}
+      <div className="absolute left-1 bottom-4">
         <div className="relative">
           <select
             value={itemsPerPage}
             onChange={(e) => {
-              const val = e.target.value;
-              onItemsPerPageChange(val === "all" ? "all" : Number(val));
+              onItemsPerPageChange(Number(e.target.value));
             }}
-            className="appearance-none bg-background border border-border hover:border-border/80 rounded-xl px-3 py-1.5 pr-8 outline-none focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer font-semibold text-foreground"
+            className="appearance-none bg-background border border-border hover:border-border/80 rounded-lg px-2.5 py-1.5 pr-7 outline-none focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer font-semibold text-foreground text-xs shadow-sm"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={30}>30</option>
             <option value={50}>50</option>
-            {/* <option value="all">All</option> */}
+            <option value={100}>100</option>
           </select>
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
             <svg
-              width="10"
-              height="6"
+              width="8"
+              height="5"
               viewBox="0 0 10 6"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -74,52 +67,19 @@ export function Pagination({
             </svg>
           </div>
         </div>
-        <span>entries</span>
       </div>
 
-      {/* Right: Page navigation */}
-      <div className="flex items-center gap-4 text-sm">
-        <span className="text-muted-foreground hidden md:inline-block font-medium">
-          Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of{" "}
-          {hasMore ? "many" : totalItems}
-        </span>
-
-        {!isAll && (totalPages > 1 || hasMore) && (
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-8 h-8 rounded-lg border-border hover:bg-muted"
-              disabled={currentPage === 1}
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-
-            <div className="flex items-center px-3 font-semibold text-foreground bg-muted/50 h-8 rounded-lg">
-              {currentPage}{" "}
-              {!hasMore && (
-                <>
-                  <span className="text-muted-foreground font-normal mx-1">
-                    /
-                  </span>{" "}
-                  {totalPages}
-                </>
-              )}
-            </div>
-
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-8 h-8 rounded-lg border-border hover:bg-muted"
-              disabled={currentPage >= totalPages && !hasMore}
-              onClick={() => onPageChange(currentPage + 1)}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+      <Button
+        onClick={handleLoadMore}
+        disabled={isSpinning}
+        className="rounded-full px-8 h-11 bg-primary/10 hover:bg-primary/20 text-primary font-bold shadow-sm transition-all min-w-35"
+      >
+        {isSpinning ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          "Load More"
         )}
-      </div>
+      </Button>
     </div>
   );
 }

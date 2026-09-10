@@ -24,42 +24,32 @@ type TrashedItem = (ItemDoc | CategoryDoc | LocationDoc) & TrashItemBase;
 
 interface TrashContentAreaProps {
   totalTrashCount: number;
-  activeTabDataLength: number;
-  filteredTrashLength: number;
   activeTab: "item" | "category" | "location";
   viewMode: "grid" | "list";
   setSearchTerm: (val: string) => void;
   currentItems: TrashedItem[];
-  totalItems: number;
-  itemsPerPage: number | "all";
-  currentPage: number;
-  setCurrentPage: (page: number) => void;
-  setItemsPerPage: (val: number | "all") => void;
+  itemsPerPage: number;
+  setItemsPerPage: (val: number) => void;
   setItemToRestore: (item: TrashedItem) => void;
   setItemToDelete: (item: TrashedItem) => void;
-  setCurrentFolderId: (id: string | null) => void;
   setDetailItem: (item: ItemDoc) => void;
   hasMore?: boolean;
+  onLoadMore: () => void;
 }
 
 export function TrashContentArea({
   totalTrashCount,
-  activeTabDataLength,
-  filteredTrashLength,
   activeTab,
   viewMode,
   setSearchTerm,
   currentItems,
-  totalItems,
   itemsPerPage,
-  currentPage,
-  setCurrentPage,
   setItemsPerPage,
   setItemToRestore,
   setItemToDelete,
-  setCurrentFolderId,
   setDetailItem,
   hasMore = false,
+  onLoadMore,
 }: TrashContentAreaProps) {
   if (totalTrashCount === 0) {
     return (
@@ -71,24 +61,13 @@ export function TrashContentArea({
     );
   }
 
-  if (activeTabDataLength === 0) {
-    return (
-      <EmptyState
-        className="min-h-84"
-        icon={Trash2}
-        title={`No deleted ${activeTab === "item" ? "items" : activeTab === "category" ? "categories" : "locations"}`}
-        description={`Your recycle bin is clear of ${activeTab === "item" ? "items" : activeTab === "category" ? "categories" : "locations"}.`}
-      />
-    );
-  }
-
-  if (filteredTrashLength === 0) {
+  if (currentItems.length === 0) {
     return (
       <EmptyState
         className="min-h-84"
         icon={XCircle}
         title="No results found"
-        description="Try adjusting your search or filters."
+        description={`No ${activeTab}s match your search or your bin is empty.`}
         action={
           <Button
             variant="outline"
@@ -112,7 +91,7 @@ export function TrashContentArea({
               item={item}
               onRestore={setItemToRestore}
               onDelete={setItemToDelete}
-              onFolderClick={setCurrentFolderId}
+              onFolderClick={() => {}}
               onDetailsClick={setDetailItem}
               viewMode="grid"
             />
@@ -127,7 +106,7 @@ export function TrashContentArea({
               item={item}
               onRestore={setItemToRestore}
               onDelete={setItemToDelete}
-              onFolderClick={setCurrentFolderId}
+              onFolderClick={() => {}}
               onDetailsClick={setDetailItem}
               viewMode="list"
             />
@@ -171,21 +150,14 @@ export function TrashContentArea({
         </div>
       )}
 
-      {totalItems > 0 && (
-        <div className="mt-2">
-          <Pagination
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            currentPage={currentPage}
-            hasMore={hasMore}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(val) => {
-              setItemsPerPage(val);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-      )}
+      <div className="mt-2">
+        <Pagination
+          itemsPerPage={itemsPerPage}
+          hasMore={hasMore}
+          onLoadMore={onLoadMore}
+          onItemsPerPageChange={setItemsPerPage}
+        />
+      </div>
     </>
   );
 }

@@ -1,19 +1,53 @@
 //src/features/categories/hooks/useCategories.ts
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, usePaginatedQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { CategoryFormData } from "../types";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { toast } from "sonner";
 
+// 1. Hook for Dropdowns (Flat List)
 export function useCategories() {
   const categories = useQuery(api.categories.getCategories);
+  return { categories, isLoading: categories === undefined };
+}
+
+// 2. Hook for Categories Page (Paginated)
+export function usePaginatedCategories(itemsPerPage: number = 10) {
+  const storageKey = `knot_pagination_categories`;
+  const savedLimit =
+    typeof window !== "undefined"
+      ? Number(sessionStorage.getItem(storageKey))
+      : 0;
+  const initialNumItems = savedLimit > itemsPerPage ? savedLimit : itemsPerPage;
+
+  const {
+    results: categories,
+    status: paginationStatus,
+    loadMore: convexLoadMore,
+  } = usePaginatedQuery(
+    api.categories.getCategoriesPaginated,
+    {},
+    { initialNumItems },
+  );
+
+  const loadMore = (count: number) => {
+    convexLoadMore(count);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        storageKey,
+        String((categories?.length || 0) + count),
+      );
+    }
+  };
+
   const createCategory = useMutation(api.categories.createCategory);
   const updateCategory = useMutation(api.categories.updateCategory);
   const moveToBin = useMutation(api.trash.moveToBin);
 
-  const isLoading = categories === undefined;
+  const isLoading =
+    categories === undefined && paginationStatus === "LoadingFirstPage";
 
   const handleCreate = async (data: CategoryFormData) => {
     try {
@@ -48,6 +82,8 @@ export function useCategories() {
   return {
     categories,
     isLoading,
+    paginationStatus,
+    loadMore,
     handleCreate,
     handleUpdate,
     handleDelete,

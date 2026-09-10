@@ -19,13 +19,13 @@ export function ItemThumbnail({
   iconClassName,
   variant = "grid",
 }: ItemThumbnailProps) {
-  // Poster available — keep the real image exactly as before
   if (posterUrl) {
     return (
       /* eslint-disable-next-line @next/next/no-img-element */
       <img
         src={posterUrl}
         alt="Thumbnail"
+        loading="lazy"
         className={cn("object-cover", className)}
       />
     );

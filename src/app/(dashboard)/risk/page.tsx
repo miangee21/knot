@@ -8,6 +8,7 @@ import { EmptyState } from "@/shared/components/EmptyState";
 import { RiskFilters } from "@/features/risk/components/RiskFilters";
 import { SearchBar } from "@/shared/components/SearchBar";
 import { Pagination } from "@/shared/components/Pagination";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
 import { ItemGrid } from "@/features/items/components/browser/ItemGrid";
 import { ItemListTable } from "@/features/items/components/browser/ItemListTable";
@@ -28,6 +29,7 @@ export default function RiskPage() {
 
   // Search & Filters State
   const [searchTerm, setSearchTerm] = React.useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
     null,
   );
@@ -39,50 +41,55 @@ export default function RiskPage() {
   const [categorySearch, setCategorySearch] = React.useState("");
   const [locationSearch, setLocationSearch] = React.useState("");
 
-  // Pagination State
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
+  // Pagination State & Math
+  const [itemsPerPage, setItemsPerPage] = React.useState<number>(10);
+  const [loadedCount, setLoadedCount] = React.useState(10);
+  const uiStorageKey = `knot_ui_loaded_risk`;
 
-  // Fetch Custom Server-Paginated Data
   const {
     riskItems,
     totalGlobalCount,
-    hasFilters,
     isLoading,
     status: paginationStatus,
     loadMore,
   } = useRiskAnalysis(
     itemsPerPage,
-    searchTerm,
+    debouncedSearchTerm,
     selectedCategory,
     selectedLocations,
   );
 
-  // Professional React 18: Render-Phase State Correction
-  const totalItems = riskItems.length;
-  const isAll = itemsPerPage === "all";
-  const maxPage = isAll
-    ? 1
-    : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
+  React.useEffect(() => {
+    setTimeout(() => {
+      const saved = sessionStorage.getItem(uiStorageKey);
+      if (saved) setLoadedCount(Number(saved));
+      else setLoadedCount(10);
+    }, 0);
+  }, [uiStorageKey]);
 
-  // Do not reset page if we are currently loading more items from the server
+  // Read-only page: No auto-fill needed. Just Scroll Restoration.
+  React.useEffect(() => {
+    const mainEl = document.querySelector("main");
+    if (!mainEl || isLoading) return;
+    const scrollKey = `knot_scroll_risk`;
+    const savedScroll = sessionStorage.getItem(scrollKey);
+    if (savedScroll) {
+      const timer = setTimeout(() => {
+        mainEl.scrollTop = Number(savedScroll);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    const handleScroll = () =>
+      sessionStorage.setItem(scrollKey, String(mainEl.scrollTop));
+    mainEl.addEventListener("scroll", handleScroll, { passive: true });
+    return () => mainEl.removeEventListener("scroll", handleScroll);
+  }, [isLoading]);
+
+  const currentItems = riskItems?.slice(0, loadedCount) || [];
   const hasMoreToLoad =
-    (paginationStatus === "CanLoadMore" ||
-      paginationStatus === "LoadingMore") &&
-    !hasFilters;
-
-  // Professional React 18: Derive state during render instead of forced state updates
-  const safeCurrentPage =
-    currentPage > maxPage && !hasMoreToLoad && totalItems > 0
-      ? maxPage
-      : currentPage;
-  const startIndex = isAll
-    ? 0
-    : (safeCurrentPage - 1) * (itemsPerPage as number);
-  const endIndex = isAll
-    ? totalItems
-    : Math.min(startIndex + (itemsPerPage as number), totalItems);
-  const currentItems = riskItems.slice(startIndex, endIndex);
+    (riskItems?.length || 0) > loadedCount ||
+    paginationStatus === "CanLoadMore" ||
+    paginationStatus === "LoadingMore";
 
   // Detail & Move Modal State
   const [detailItem, setDetailItem] = React.useState<ItemDoc | null>(null);
@@ -96,31 +103,31 @@ export default function RiskPage() {
   // Handle Mutually Exclusive Filters
   const handleCategoryChange = (catId: string) => {
     setSelectedCategory(catId === selectedCategory ? null : catId);
-    setSelectedLocations([]); // Clear locations if category is used
-    setCurrentPage(1);
+    setSelectedLocations([]);
+    setLoadedCount(itemsPerPage);
   };
 
   const handleLocationToggle = (locId: string) => {
-    setSelectedCategory(null); // Clear category if location is used
+    setSelectedCategory(null);
     setSelectedLocations((prev) =>
       prev.includes(locId)
         ? prev.filter((id) => id !== locId)
         : [...prev, locId],
     );
-    setCurrentPage(1);
+    setLoadedCount(itemsPerPage);
   };
 
   const clearFilters = () => {
     setSelectedCategory(null);
     setSelectedLocations([]);
     setSearchTerm("");
-    setCurrentPage(1);
+    setLoadedCount(itemsPerPage);
   };
 
   return (
-    <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">
-      {/* Header & Controls */}
-      <div className="flex flex-col gap-4 border-b border-border/50 pb-4">
+    <div className="flex flex-col animate-in fade-in-50 duration-500 w-full h-full relative">
+      {/* Sticky Header Layer with Negative Margin Bleed */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md flex flex-col gap-4 pb-2 pt-4 sm:pt-6 md:pt-8 px-4 sm:px-6 md:px-8 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 border-b border-border/50">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
@@ -139,41 +146,43 @@ export default function RiskPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
-            <SearchBar
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Search at-risk items..."
-              className="w-full sm:w-56"
-            />
-            <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+          <div className="flex flex-col xl:flex-row items-end xl:items-center gap-3 w-full xl:w-auto shrink-0 md:mt-10">
+            {/* Filter Dropdowns Area (Moved next to Search) */}
+            {riskItems && riskItems.length > 0 && (
+              <RiskFilters
+                categories={categories || []}
+                locations={locations || []}
+                selectedCategory={selectedCategory}
+                selectedLocations={selectedLocations}
+                categorySearch={categorySearch}
+                setCategorySearch={setCategorySearch}
+                locationSearch={locationSearch}
+                setLocationSearch={setLocationSearch}
+                handleCategoryChange={handleCategoryChange}
+                handleLocationToggle={handleLocationToggle}
+                clearFilters={clearFilters}
+                setSelectedCategory={setSelectedCategory}
+                setSelectedLocations={setSelectedLocations}
+                setCurrentPage={() => setLoadedCount(itemsPerPage)}
+                searchTerm={searchTerm}
+              />
+            )}
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <SearchBar
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Search at-risk items..."
+                className="w-full sm:w-56"
+              />
+              <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+            </div>
           </div>
         </div>
-
-        {/* Filter Dropdowns Area */}
-        {riskItems && riskItems.length > 0 && (
-          <RiskFilters
-            categories={categories || []}
-            locations={locations || []}
-            selectedCategory={selectedCategory}
-            selectedLocations={selectedLocations}
-            categorySearch={categorySearch}
-            setCategorySearch={setCategorySearch}
-            locationSearch={locationSearch}
-            setLocationSearch={setLocationSearch}
-            handleCategoryChange={handleCategoryChange}
-            handleLocationToggle={handleLocationToggle}
-            clearFilters={clearFilters}
-            setSelectedCategory={setSelectedCategory}
-            setSelectedLocations={setSelectedLocations}
-            setCurrentPage={setCurrentPage}
-            searchTerm={searchTerm}
-          />
-        )}
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col space-y-2 min-h-0">
+      <div className="flex-1 flex flex-col space-y-2 min-h-0 mt-4 px-1">
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[40vh]">
             <div className="w-8 h-8 rounded-full border-4 border-destructive/20 border-t-destructive animate-spin" />
@@ -210,7 +219,7 @@ export default function RiskPage() {
                 currentPath="/browse" // Dummy path so link works if they click
                 allLocations={locations || []}
                 onDetailsClick={setDetailItem}
-                onEditClick={() => {}} // Disabled here, they should use details to edit
+                onEditClick={() => {}} // Disabled here
                 onDeleteClick={() => {}}
                 onMoveClick={setMovingItem}
               />
@@ -226,33 +235,19 @@ export default function RiskPage() {
               />
             )}
 
-            {totalItems > 0 && (
-              <div className="mt-2">
-                <Pagination
-                  totalItems={totalItems}
-                  itemsPerPage={itemsPerPage}
-                  currentPage={safeCurrentPage}
-                  hasMore={paginationStatus === "CanLoadMore" && !hasFilters}
-                  onPageChange={(newPage) => {
-                    if (itemsPerPage !== "all") {
-                      const newStartIndex = (newPage - 1) * itemsPerPage;
-                      if (
-                        newStartIndex >= riskItems.length &&
-                        paginationStatus === "CanLoadMore" &&
-                        !hasFilters
-                      ) {
-                        loadMore(itemsPerPage);
-                      }
-                    }
-                    setCurrentPage(newPage);
-                  }}
-                  onItemsPerPageChange={(val) => {
-                    setItemsPerPage(val);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-            )}
+            <div className="mt-2">
+              <Pagination
+                itemsPerPage={itemsPerPage}
+                hasMore={hasMoreToLoad}
+                onLoadMore={() => {
+                  const newCount = loadedCount + itemsPerPage;
+                  setLoadedCount(newCount);
+                  sessionStorage.setItem(uiStorageKey, String(newCount));
+                  loadMore(itemsPerPage);
+                }}
+                onItemsPerPageChange={setItemsPerPage}
+              />
+            </div>
           </>
         )}
       </div>

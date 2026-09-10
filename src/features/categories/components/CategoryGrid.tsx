@@ -1,40 +1,34 @@
 //src/features/categories/components/CategoryGrid.tsx
 "use client";
 
-import * as React from "react";
 import { CategoryCard, CategoryDoc } from "./CategoryCard";
-import { Pagination } from "@/shared/components/Pagination";
+import { Loader2 } from "lucide-react";
 
 interface CategoryGridProps {
   categories: CategoryDoc[];
   onEdit: (category: CategoryDoc) => void;
   onDelete: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export function CategoryGrid({
   categories,
   onEdit,
   onDelete,
+  isLoading,
 }: CategoryGridProps) {
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
-
-  const totalItems = categories.length;
-  const isAll = itemsPerPage === "all";
-
-  const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
-  const endIndex = isAll
-    ? totalItems
-    : Math.min(startIndex + (itemsPerPage as number), totalItems);
-
-  // Slice the array based on pagination
-  const currentCategories = categories.slice(startIndex, endIndex);
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary/60" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Grid of Categories */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {currentCategories.map((category) => (
+        {categories.map((category) => (
           <CategoryCard
             key={category._id}
             category={category}
@@ -43,18 +37,6 @@ export function CategoryGrid({
           />
         ))}
       </div>
-
-      {/* Pagination Controls */}
-      <Pagination
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onItemsPerPageChange={(val) => {
-          setItemsPerPage(val);
-          setCurrentPage(1);
-        }}
-      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ export function useAuthActions() {
 
   const handleLogin = async (data: LoginFormData) => {
     try {
+      if (typeof window !== "undefined") sessionStorage.clear();
       await signIn("password", { ...data, flow: "signIn" });
       toast.success("Welcome back!", {
         description: "You have successfully logged in.",
@@ -26,6 +27,7 @@ export function useAuthActions() {
 
   const handleSignup = async (data: SignupFormData) => {
     try {
+      if (typeof window !== "undefined") sessionStorage.clear();
       await signIn("password", { ...data, flow: "signUp" });
       toast.success("Account created successfully!", {
         description: "Welcome to Knot.",

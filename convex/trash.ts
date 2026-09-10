@@ -4,6 +4,7 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
+import { Doc } from "./_generated/dataModel";
 
 // 1. Move to Bin (Soft Delete)
 export const moveToBin = mutation({
@@ -74,81 +75,138 @@ export const moveToBin = mutation({
   },
 });
 
-// 2a. Get Trashed Items Paginated
-export const getTrashItems = query({
-  args: { paginationOpts: paginationOptsValidator },
+// 2. Unified Master Paginated Trash API (No Collect/Slice)
+export const getTrashPaginated = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    tab: v.union(
+      v.literal("item"),
+      v.literal("category"),
+      v.literal("location"),
+    ),
+    searchTerm: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return { page: [], isDone: true, continueCursor: "" };
 
-    const results = await ctx.db
-      .query("items")
-      .withIndex("by_user_sort", (q) => q.eq("userId", userId)) // A-Z Index use kiya
-      .filter((q) => q.neq(q.field("deletedAt"), undefined))
-      .order("asc")
-      .paginate(args.paginationOpts);
+    let pageDocs: Array<Doc<"items"> | Doc<"categories"> | Doc<"locations">> =
+      [];
+    let isDone = true;
+    let continueCursor = "";
+
+    if (args.tab === "item") {
+      if (args.searchTerm) {
+        const rawSearch = await ctx.db
+          .query("items")
+          .withSearchIndex("search_name", (q) =>
+            q.search("name", args.searchTerm as string).eq("userId", userId),
+          )
+          .take(100);
+        pageDocs = rawSearch.filter((i) => i.deletedAt !== undefined);
+      } else {
+        const results = await ctx.db
+          .query("items")
+          .withIndex("by_user_sort", (q) => q.eq("userId", userId))
+          .filter((q) => q.neq(q.field("deletedAt"), undefined))
+          .order("asc")
+          .paginate(args.paginationOpts);
+        pageDocs = results.page;
+        isDone = results.isDone;
+        continueCursor = results.continueCursor;
+      }
+    } else if (args.tab === "category") {
+      if (args.searchTerm) {
+        const rawSearch = await ctx.db
+          .query("categories")
+          .withSearchIndex("search_name", (q) =>
+            q.search("name", args.searchTerm as string).eq("userId", userId),
+          )
+          .take(100);
+        pageDocs = rawSearch.filter((i) => i.deletedAt !== undefined);
+      } else {
+        const results = await ctx.db
+          .query("categories")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .filter((q) => q.neq(q.field("deletedAt"), undefined))
+          .order("desc")
+          .paginate(args.paginationOpts);
+        pageDocs = results.page;
+        isDone = results.isDone;
+        continueCursor = results.continueCursor;
+      }
+    } else if (args.tab === "location") {
+      if (args.searchTerm) {
+        const rawSearch = await ctx.db
+          .query("locations")
+          .withSearchIndex("search_name", (q) =>
+            q.search("name", args.searchTerm as string).eq("userId", userId),
+          )
+          .take(100);
+        pageDocs = rawSearch.filter((i) => i.deletedAt !== undefined);
+      } else {
+        const results = await ctx.db
+          .query("locations")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .filter((q) => q.neq(q.field("deletedAt"), undefined))
+          .order("desc")
+          .paginate(args.paginationOpts);
+        pageDocs = results.page;
+        isDone = results.isDone;
+        continueCursor = results.continueCursor;
+      }
+    }
 
     const page = await Promise.all(
-      results.page.map(async (item) => ({
-        ...item,
-        posterUrl: item.posterStorageId
-          ? await ctx.storage.getUrl(item.posterStorageId)
-          : undefined,
-      })),
+      pageDocs.map(async (doc) => {
+        if (args.tab === "item") {
+          const itemDoc = doc as Doc<"items">;
+          return {
+            ...itemDoc,
+            type: args.tab,
+            posterUrl: itemDoc.posterStorageId
+              ? await ctx.storage.getUrl(itemDoc.posterStorageId)
+              : undefined,
+          };
+        }
+        return { ...doc, type: args.tab };
+      }),
     );
 
-    return { ...results, page };
+    return { page, isDone, continueCursor };
   },
 });
 
-// 2c. Search Trashed Items (Global Search bypasses pagination)
-export const searchTrash = query({
-  args: { query: v.string() },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const results = await ctx.db
-      .query("items")
-      .withSearchIndex("search_name", (q) =>
-        q.search("name", args.query).eq("userId", userId),
-      )
-      .collect();
-
-    const trashedItems = results.filter((i) => i.deletedAt !== undefined);
-    return await Promise.all(
-      trashedItems.map(async (item) => ({
-        ...item,
-        posterUrl: item.posterStorageId
-          ? await ctx.storage.getUrl(item.posterStorageId)
-          : undefined,
-      })),
-    );
-  },
-});
-
-// 2b. Get Trashed Categories and Locations (Flat)
-export const getTrashAssets = query({
+// Professional scalable counts for UI Tabs (Max 100 limit to prevent memory bloat)
+export const getTrashCounts = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return { categories: [], locations: [] };
+    if (!userId) return { items: 0, categories: 0, locations: 0 };
 
+    // Using .take(100) instead of .collect() prevents server memory crashes on large datasets.
+    // The UI will naturally show up to 100, acting like a "99+" badge.
+    const items = await ctx.db
+      .query("items")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.neq(q.field("deletedAt"), undefined))
+      .take(100);
     const categories = await ctx.db
       .query("categories")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.neq(q.field("deletedAt"), undefined))
-      .order("desc")
-      .collect();
-
+      .take(100);
     const locations = await ctx.db
       .query("locations")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.neq(q.field("deletedAt"), undefined))
-      .order("desc")
-      .collect();
+      .take(100);
 
-    return { categories, locations };
+    return {
+      items: items.length,
+      categories: categories.length,
+      locations: locations.length,
+    };
   },
 });
 

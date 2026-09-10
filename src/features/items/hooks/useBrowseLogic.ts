@@ -15,8 +15,8 @@ export function useBrowseFilters(
   locationFilterId: string | null,
   searchTerm: string,
   debouncedSearchTerm: string,
-  itemsPerPage: number | "all",
-  currentPage: number,
+  itemsPerPage: number,
+  loadedCount: number,
   paginationStatus: string,
 ) {
   const searchResults = useQuery(
@@ -60,34 +60,19 @@ export function useBrowseFilters(
   ]);
 
   const totalItems = filteredItems.length;
-  const isAll = itemsPerPage === "all";
-  const maxPage = isAll
-    ? 1
-    : Math.max(1, Math.ceil(totalItems / (itemsPerPage as number)));
-
+  const isSearchOrFilter = !!debouncedSearchTerm || !!locationFilterId;
   const hasMoreToLoad =
-    (paginationStatus === "CanLoadMore" ||
-      paginationStatus === "LoadingMore") &&
-    !debouncedSearchTerm &&
-    !locationFilterId;
+    filteredItems.length > loadedCount ||
+    (!isSearchOrFilter &&
+      (paginationStatus === "CanLoadMore" ||
+        paginationStatus === "LoadingMore"));
 
-  const safeCurrentPage =
-    currentPage > maxPage && !hasMoreToLoad
-      ? Math.max(1, maxPage)
-      : currentPage;
-
-  const startIndex = isAll
-    ? 0
-    : (safeCurrentPage - 1) * (itemsPerPage as number);
-  const endIndex = isAll
-    ? totalItems
-    : Math.min(startIndex + (itemsPerPage as number), totalItems);
-  const currentItems = filteredItems.slice(startIndex, endIndex);
+  const currentItems = filteredItems.slice(0, loadedCount);
 
   return {
     isSearching,
     totalItems,
-    safeCurrentPage,
+    hasMoreToLoad,
     currentItems,
   };
 }

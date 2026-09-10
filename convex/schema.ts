@@ -22,15 +22,27 @@ export default defineSchema({
     usedBytes: v.optional(v.number()),
     notes: v.optional(v.string()),
     deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
-  }).index("by_user", ["userId"]),
+  })
+    .index("by_user", ["userId"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["userId", "deletedAt"],
+    }),
 
   // Categories table (badge-only, not primary navigation)
   categories: defineTable({
     userId: v.id("users"),
-    name: v.string(), // "Movies", "Series", "Software", "Documents"
+    name: v.string(),
     icon: v.string(),
-    deletedAt: v.optional(v.number()), // For Soft Delete & Recycle Bin
-  }).index("by_user", ["userId"]),
+    deletedAt: v.optional(v.number()),
+    sortName: v.string(), // For strict 0-9 and A-Z ordering
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_sort", ["userId", "sortName"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["userId", "deletedAt"],
+    }),
 
   // Items table (the tree — the core of the whole app)
   items: defineTable({
@@ -63,7 +75,13 @@ export default defineSchema({
     .index("by_user_sort", ["userId", "sortName"])
     .searchIndex("search_name", {
       searchField: "name",
-      filterFields: ["userId"],
+      filterFields: [
+        "userId",
+        "deletedAt",
+        "isAtRisk",
+        "categoryId",
+        "parentId",
+      ],
     }),
 
   // Global App Settings (e.g., signup toggles)

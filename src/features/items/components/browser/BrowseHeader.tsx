@@ -37,7 +37,7 @@ export function BrowseHeader({
   const router = useRouter();
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/50 pb-4">
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">

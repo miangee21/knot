@@ -12,19 +12,26 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { LocationFormDialog } from "@/features/locations/components/LocationFormDialog";
 import { LocationDeleteModals } from "@/features/locations/components/LocationDeleteModals";
-import { useLocations } from "@/features/locations/hooks/useLocations";
+import { usePaginatedLocations } from "@/features/locations/hooks/useLocations";
 import { LocationFormData } from "@/features/locations/types";
 import { LocationDoc } from "@/features/locations/components/LocationCard";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { Pagination } from "@/shared/components/Pagination";
 
 export default function LocationsPage() {
-  const { locations, isLoading, handleCreate, handleUpdate, handleDelete } =
-    useLocations();
+  const [itemsPerPage, setItemsPerPage] = React.useState<number>(10);
+  const {
+    locations,
+    isLoading,
+    paginationStatus,
+    loadMore,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+  } = usePaginatedLocations(itemsPerPage);
+
   const counts = useQuery(api.items.getGlobalCounts);
   const locationCounts = counts?.locationCounts || {};
-
-  // View State (Grid or List)
   const [view, setView] = React.useState<"grid" | "list">("grid");
   const [mounted, setMounted] = React.useState(false);
 
@@ -45,17 +52,71 @@ export default function LocationsPage() {
   };
 
   const activeView = mounted ? view : "grid";
-
-  // Search & Pagination States
   const [searchTerm, setSearchTerm] = React.useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
+  const [loadedCount, setLoadedCount] = React.useState(10);
 
-  const handleSearchChange = React.useCallback((term: string) => {
-    setSearchTerm(term);
-    setCurrentPage(1);
+  const searchResults = useQuery(
+    api.locations.searchLocations,
+    debouncedSearchTerm ? { query: debouncedSearchTerm } : "skip",
+  );
+  const isSearching = !!debouncedSearchTerm;
+  const isSearchLoading = isSearching && searchResults === undefined;
+  const uiStorageKey = `knot_ui_loaded_locations`;
+
+  const handleSearchChange = React.useCallback(
+    (term: string) => {
+      setSearchTerm(term);
+      setLoadedCount(itemsPerPage);
+    },
+    [itemsPerPage],
+  );
+
+  // Restore UI slice state on mount
+  React.useEffect(() => {
+    setTimeout(() => {
+      const saved = sessionStorage.getItem(uiStorageKey);
+      if (saved) setLoadedCount(Number(saved));
+      else setLoadedCount(10);
+    }, 0);
+  }, [uiStorageKey]);
+
+  // 1. Auto-fill list
+  React.useEffect(() => {
+    if (
+      !isSearching &&
+      paginationStatus === "CanLoadMore" &&
+      locations &&
+      locations.length < loadedCount
+    ) {
+      loadMore(loadedCount - locations.length);
+    }
+  }, [locations, loadedCount, isSearching, paginationStatus, loadMore]);
+
+  // 2. Save scroll position
+  React.useEffect(() => {
+    const mainEl = document.querySelector("main");
+    if (!mainEl) return;
+    const scrollKey = `knot_scroll_locations`;
+    const handleScroll = () =>
+      sessionStorage.setItem(scrollKey, String(mainEl.scrollTop));
+    mainEl.addEventListener("scroll", handleScroll, { passive: true });
+    return () => mainEl.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // 3. Restore scroll position
+  React.useEffect(() => {
+    const mainEl = document.querySelector("main");
+    if (!mainEl || isLoading) return;
+    const scrollKey = `knot_scroll_locations`;
+    const savedScroll = sessionStorage.getItem(scrollKey);
+    if (savedScroll) {
+      const timer = setTimeout(() => {
+        mainEl.scrollTop = Number(savedScroll);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   // Modals & Forms State
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -66,26 +127,15 @@ export default function LocationsPage() {
     null,
   );
 
-  // Filter Logic
-  const filteredLocations = React.useMemo(() => {
-    if (!locations) return [];
-    if (!debouncedSearchTerm) return locations;
-
-    return locations.filter((loc) =>
-      loc.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()),
-    );
-  }, [locations, debouncedSearchTerm]);
-
-  // Pagination Math
-  const totalItems = filteredLocations.length;
-  const isAll = itemsPerPage === "all";
-  const startIndex = isAll ? 0 : (currentPage - 1) * (itemsPerPage as number);
-  const endIndex = isAll
-    ? totalItems
-    : Math.min(startIndex + (itemsPerPage as number), totalItems);
-
-  // The final slice of data to pass to the UI
-  const currentLocations = filteredLocations.slice(startIndex, endIndex);
+  // DB Search & Load More Math
+  const currentLocations = isSearching
+    ? searchResults || []
+    : locations?.slice(0, loadedCount) || [];
+  const hasMoreToLoad =
+    !isSearching &&
+    ((locations && locations.length > loadedCount) ||
+      paginationStatus === "CanLoadMore" ||
+      paginationStatus === "LoadingMore");
 
   // Handlers
   const openNewDialog = () => {
@@ -116,32 +166,35 @@ export default function LocationsPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
-        <Loader2 className="w-10 h-10 animate-spin text-primary/60" />
-      </div>
-    );
-  }
-
   const hasNoLocationsAtAll = locations && locations.length === 0;
   const hasNoSearchResults =
-    locations && locations.length > 0 && filteredLocations.length === 0;
+    locations &&
+    locations.length > 0 &&
+    isSearching &&
+    !isSearchLoading &&
+    currentLocations.length === 0;
 
   return (
-    <div className="flex flex-col space-y-4 animate-in fade-in-50 duration-500 w-full">
-      <LocationHeader
-        hasLocations={!!locations && locations.length > 0}
-        searchTerm={searchTerm}
-        setSearchTerm={handleSearchChange}
-        view={activeView}
-        handleViewChange={handleViewChange}
-        openNewDialog={openNewDialog}
-      />
+    <div className="flex flex-col animate-in fade-in-50 duration-500 w-full h-full relative">
+      {/* Sticky Header Layer with Negative Margin Bleed */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md pb-2 pt-4 sm:pt-6 md:pt-8 px-4 sm:px-6 md:px-8 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 border-b border-border/50">
+        <LocationHeader
+          hasLocations={!!locations && locations.length > 0}
+          searchTerm={searchTerm}
+          setSearchTerm={handleSearchChange}
+          view={activeView}
+          handleViewChange={handleViewChange}
+          openNewDialog={openNewDialog}
+        />
+      </div>
 
       {/* Main Content Area */}
-      <div className="flex-1">
-        {hasNoLocationsAtAll ? (
+      <div className="flex-1 mt-4 px-1">
+        {isLoading || isSearchLoading ? (
+          <div className="flex flex-col items-center justify-center min-h-[40vh]">
+            <Loader2 className="w-10 h-10 animate-spin text-primary/60" />
+          </div>
+        ) : hasNoLocationsAtAll ? (
           <EmptyState
             icon={HardDrive}
             title="No locations yet"
@@ -195,17 +248,24 @@ export default function LocationsPage() {
               </div>
             )}
 
-            {/* Pagination Controls */}
-            <Pagination
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(val) => {
-                setItemsPerPage(val);
-                setCurrentPage(1);
-              }}
-            />
+            {/* Load More Component */}
+            {!isSearching && (
+              <div className="mt-2">
+                <Pagination
+                  itemsPerPage={itemsPerPage}
+                  hasMore={hasMoreToLoad}
+                  onLoadMore={() => {
+                    const newCount = loadedCount + itemsPerPage;
+                    setLoadedCount(newCount);
+                    sessionStorage.setItem(uiStorageKey, String(newCount));
+                    loadMore(itemsPerPage);
+                  }}
+                  onItemsPerPageChange={(val) => {
+                    setItemsPerPage(val);
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

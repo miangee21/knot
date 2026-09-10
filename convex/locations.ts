@@ -2,7 +2,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { paginationOptsValidator } from "convex/server";
 
+// 1. For Dropdowns & Modals (Flat List)
 export const getLocations = query({
   args: {},
   handler: async (ctx) => {
@@ -14,6 +16,22 @@ export const getLocations = query({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
+  },
+});
+
+// 2. For Locations Page (Paginated "Load More")
+export const getLocationsPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { page: [], isDone: true, continueCursor: "" };
+
+    return await ctx.db
+      .query("locations")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .order("asc")
+      .paginate(args.paginationOpts);
   },
 });
 
@@ -67,5 +85,24 @@ export const updateLocation = mutation({
 
     const { id, ...updates } = args;
     await ctx.db.patch(id, updates);
+  },
+});
+
+// Professional DB Search (Strict Active Only)
+export const searchLocations = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    return await ctx.db
+      .query("locations")
+      .withSearchIndex("search_name", (q) =>
+        q
+          .search("name", args.query)
+          .eq("userId", userId)
+          .eq("deletedAt", undefined),
+      )
+      .take(100);
   },
 });

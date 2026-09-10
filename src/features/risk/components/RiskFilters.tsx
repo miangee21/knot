@@ -1,7 +1,7 @@
 //src/features/risk/components/RiskFilters.tsx
 "use client";
 
-import { Check, ChevronDown, Filter, X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
   DropdownMenu,
@@ -48,14 +48,7 @@ export function RiskFilters({
   searchTerm,
 }: RiskFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3 mt-2">
-      <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-semibold text-muted-foreground">
-          Filters:
-        </span>
-      </div>
-
+    <div className="flex flex-wrap items-center gap-3">
       {/* Category Dropdown */}
       <DropdownMenu onOpenChange={(open) => !open && setCategorySearch("")}>
         <DropdownMenuTrigger

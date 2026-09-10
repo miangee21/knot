@@ -6,46 +6,43 @@ import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 
 export function useTrash(
-  itemsPerPage: number | "all" = 10,
+  activeTab: "item" | "category" | "location",
+  itemsPerPage: number = 10,
   searchTerm: string = "",
 ) {
-  const initialNumItems = itemsPerPage === "all" ? 10000 : itemsPerPage;
+  const storageKey = `knot_pagination_trash_${activeTab}`;
+  const savedLimit =
+    typeof window !== "undefined"
+      ? Number(sessionStorage.getItem(storageKey))
+      : 0;
+  const initialNumItems = savedLimit > itemsPerPage ? savedLimit : itemsPerPage;
 
   const {
     results: paginatedItems,
     status,
-    loadMore,
-  } = usePaginatedQuery(api.trash.getTrashItems, {}, { initialNumItems });
-
-  const searchResults = useQuery(
-    api.trash.searchTrash,
-    searchTerm ? { query: searchTerm } : "skip",
+    loadMore: convexLoadMore,
+  } = usePaginatedQuery(
+    api.trash.getTrashPaginated,
+    { tab: activeTab, searchTerm },
+    { initialNumItems },
   );
 
-  const assets = useQuery(api.trash.getTrashAssets);
+  const loadMore = (count: number) => {
+    convexLoadMore(count);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        storageKey,
+        String((paginatedItems?.length || 0) + count),
+      );
+    }
+  };
 
-  // If user is searching, use the global search results; otherwise use paginated items
-  const itemsToUse =
-    searchTerm && searchResults !== undefined
-      ? searchResults
-      : paginatedItems || [];
-
-  const trashData =
-    (paginatedItems !== undefined || searchResults !== undefined) && assets
-      ? {
-          items: itemsToUse,
-          categories: assets.categories,
-          locations: assets.locations,
-        }
-      : undefined;
-
+  const counts = useQuery(api.trash.getTrashCounts);
   const restoreItem = useMutation(api.trash.restore);
   const hardDeleteItem = useMutation(api.trash.hardDelete);
   const emptyBin = useMutation(api.trash.emptyBin);
 
-  const isSearchLoading = searchTerm !== "" && searchResults === undefined;
-  const isLoading =
-    status === "LoadingFirstPage" || assets === undefined || isSearchLoading;
+  const isLoading = status === "LoadingFirstPage" || counts === undefined;
 
   const handleRestore = async (
     id: string,
@@ -84,7 +81,8 @@ export function useTrash(
   };
 
   return {
-    trashData,
+    currentItems: paginatedItems || [],
+    counts,
     isLoading,
     status,
     loadMore,

@@ -7,15 +7,35 @@ import { Id } from "../../../../convex/_generated/dataModel";
 
 export function useItemChildren(
   parentId: Id<"items"> | null,
-  itemsPerPage: number | "all" = 10,
+  itemsPerPage: number = 10,
 ) {
-  // If "all", we set a very high initial limit to fetch effectively all active records safely
-  const initialNumItems = itemsPerPage === "all" ? 10000 : itemsPerPage;
-  const { results, status, loadMore } = usePaginatedQuery(
+  const storageKey = `knot_pagination_${parentId || "root"}`;
+  const savedLimit =
+    typeof window !== "undefined"
+      ? Number(sessionStorage.getItem(storageKey))
+      : 0;
+
+  const initialNumItems = savedLimit > itemsPerPage ? savedLimit : itemsPerPage;
+
+  const {
+    results,
+    status,
+    loadMore: convexLoadMore,
+  } = usePaginatedQuery(
     api.items.getChildren,
     { parentId },
     { initialNumItems },
   );
+
+  const loadMore = (count: number) => {
+    convexLoadMore(count);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        storageKey,
+        String((results?.length || 0) + count),
+      );
+    }
+  };
 
   return {
     children: results,

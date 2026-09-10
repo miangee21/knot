@@ -1,12 +1,11 @@
 //src/features/trash/components/TrashHeader.tsx
 "use client";
 
-import { Trash2, ArrowLeft } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { SearchBar } from "@/shared/components/SearchBar";
 import { ViewToggle } from "@/features/items/components/browser/ViewToggle";
 import { cn } from "@/shared/lib/utils";
-import { ItemDoc, CategoryDoc, LocationDoc } from "@/features/items/types";
 
 type TrashType = "item" | "category" | "location";
 
@@ -15,16 +14,12 @@ interface TrashHeaderProps {
   activeTab: TrashType;
   setActiveTab: (tab: TrashType) => void;
   tabConfig: { id: TrashType; label: string; key: string }[];
-  trashData:
-    | { items: ItemDoc[]; categories: CategoryDoc[]; locations: LocationDoc[] }
-    | undefined;
+  counts: { items: number; categories: number; locations: number } | undefined;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   viewMode: "grid" | "list";
   setViewMode: (mode: "grid" | "list") => void;
   setIsEmptyBinOpen: (val: boolean) => void;
-  currentFolderId: string | null;
-  onBack: () => void;
 }
 
 export function TrashHeader({
@@ -32,31 +27,19 @@ export function TrashHeader({
   activeTab,
   setActiveTab,
   tabConfig,
-  trashData,
+  counts,
   searchTerm,
   setSearchTerm,
   viewMode,
   setViewMode,
   setIsEmptyBinOpen,
-  currentFolderId,
-  onBack,
 }: TrashHeaderProps) {
   const activeTabConfig = tabConfig.find((t) => t.id === activeTab);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-4">
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          {currentFolderId && activeTab === "item" && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onBack}
-              className="rounded-full h-8 w-8 hover:bg-muted"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
             <Trash2 className="w-8 h-8 text-primary" /> Recycle Bin
           </h1>
@@ -78,8 +61,7 @@ export function TrashHeader({
               >
                 {tab.label}
                 <span className="ml-2 text-xs opacity-60">
-                  ({trashData?.[tab.key as keyof typeof trashData]?.length || 0}
-                  )
+                  ({counts?.[tab.key as keyof typeof counts] || 0})
                 </span>
               </button>
             ))}
@@ -87,7 +69,7 @@ export function TrashHeader({
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto md:mt-10 shrink-0">
         {totalTrashCount > 0 && (
           <Button
             variant="outline"

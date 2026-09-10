@@ -39,13 +39,21 @@ export default function BrowsePage() {
     segments && segments.length > 0 ? segments[segments.length - 1] : null
   ) as Id<"items"> | null;
   const currentPath = segments ? `/browse/${segments.join("/")}` : "/browse";
-
-  // View Preference (Grid vs List)
   const { viewMode, setViewMode } = useViewPreference();
 
-  // Pagination State (Moved up to pass into data hook)
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState<number | "all">(10);
+  // Pagination & Load More State
+  const [loadedCount, setLoadedCount] = React.useState(10);
+  const [itemsPerPage, setItemsPerPage] = React.useState<number>(10);
+  const uiStorageKey = `knot_ui_loaded_${currentParentId || "root"}`;
+
+  // Restore UI slice state on mount or folder change
+  React.useEffect(() => {
+    setTimeout(() => {
+      const saved = sessionStorage.getItem(uiStorageKey);
+      if (saved) setLoadedCount(Number(saved));
+      else setLoadedCount(10);
+    }, 0);
+  }, [uiStorageKey]);
 
   // Data Hooks
   const { ancestors, isLoading: ancestorsLoading } = useItemAncestors(
@@ -76,10 +84,62 @@ export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const handleSearchChange = React.useCallback((term: string) => {
-    setSearchTerm(term);
-    setCurrentPage(1);
-  }, []);
+  const handleSearchChange = React.useCallback(
+    (term: string) => {
+      setSearchTerm(term);
+      setLoadedCount(itemsPerPage);
+    },
+    [itemsPerPage],
+  );
+
+  React.useEffect(() => {
+    if (
+      !debouncedSearchTerm &&
+      !locationFilterId &&
+      paginationStatus === "CanLoadMore" &&
+      items &&
+      items.length < loadedCount
+    ) {
+      loadMore(loadedCount - items.length);
+    }
+  }, [
+    items,
+    loadedCount,
+    debouncedSearchTerm,
+    locationFilterId,
+    paginationStatus,
+    loadMore,
+  ]);
+
+  // 2. Save scroll position
+  React.useEffect(() => {
+    const mainEl = document.querySelector("main");
+    if (!mainEl) return;
+
+    const scrollKey = `knot_scroll_${currentParentId || "root"}`;
+    const handleScroll = () => {
+      sessionStorage.setItem(scrollKey, String(mainEl.scrollTop));
+    };
+
+    mainEl.addEventListener("scroll", handleScroll, { passive: true });
+    return () => mainEl.removeEventListener("scroll", handleScroll);
+  }, [currentParentId]);
+
+  // 3. Restore scroll position
+  React.useEffect(() => {
+    const mainEl = document.querySelector("main");
+    if (!mainEl || itemsLoading || ancestorsLoading) return;
+
+    const scrollKey = `knot_scroll_${currentParentId || "root"}`;
+    const savedScroll = sessionStorage.getItem(scrollKey);
+
+    if (savedScroll) {
+      const timer = setTimeout(() => {
+        mainEl.scrollTop = Number(savedScroll);
+      }, 100); // Slight delay for DOM paint
+      return () => clearTimeout(timer);
+    }
+  }, [itemsLoading, ancestorsLoading, currentParentId]);
 
   // Custom Hook: Modals & Mutations
   const {
@@ -101,58 +161,36 @@ export default function BrowsePage() {
   } = useBrowseMutations();
 
   // Custom Hook: Filters & Pagination
-  const { isSearching, totalItems, safeCurrentPage, currentItems } =
-    useBrowseFilters(
-      items,
-      locationFilterId,
-      searchTerm,
-      debouncedSearchTerm,
-      itemsPerPage,
-      currentPage,
-      paginationStatus,
-    );
-
-  // Auto-fill page if items are deleted and we have more in DB to show
-  React.useEffect(() => {
-    if (
-      itemsPerPage !== "all" &&
-      !debouncedSearchTerm &&
-      !locationFilterId &&
-      paginationStatus === "CanLoadMore" &&
-      totalItems > 0 &&
-      currentItems.length < itemsPerPage &&
-      currentPage === Math.ceil(totalItems / itemsPerPage)
-    ) {
-      loadMore(itemsPerPage);
-    }
-  }, [
-    currentItems.length,
-    itemsPerPage,
-    debouncedSearchTerm,
+  const { isSearching, hasMoreToLoad, currentItems } = useBrowseFilters(
+    items,
     locationFilterId,
+    searchTerm,
+    debouncedSearchTerm,
+    itemsPerPage,
+    loadedCount,
     paginationStatus,
-    loadMore,
-    totalItems,
-    currentPage,
-  ]);
+  );
 
   return (
-    <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500 w-full h-full pb-2">
-      <BrowseHeader
-        locationFilterId={locationFilterId}
-        currentPath={currentPath}
-        ancestors={ancestors || []}
-        ancestorsLoading={ancestorsLoading}
-        items={(items || []).filter((i): i is ItemDoc => i !== null)}
-        searchTerm={searchTerm}
-        setSearchTerm={handleSearchChange}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        openNewDialog={openNewDialog}
-      />
+    <div className="flex flex-col animate-in fade-in-50 duration-500 w-full h-full relative">
+      {/* Sticky Header Layer with Negative Margin Bleed for Seamless Sticking */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md pb-0 pt-6 sm:pt-8 md:pt-10 px-4 sm:px-6 md:px-8 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 border-b border-border/50">
+        <BrowseHeader
+          locationFilterId={locationFilterId}
+          currentPath={currentPath}
+          ancestors={ancestors || []}
+          ancestorsLoading={ancestorsLoading}
+          items={(items || []).filter((i): i is ItemDoc => i !== null)}
+          searchTerm={searchTerm}
+          setSearchTerm={handleSearchChange}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          openNewDialog={openNewDialog}
+        />
+      </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col space-y-2">
+      <div className="flex-1 flex flex-col space-y-2 mt-4 px-1">
         {itemsLoading || ancestorsLoading || isSearching ? (
           <div className="flex items-center justify-center min-h-[40vh]">
             <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
@@ -211,40 +249,24 @@ export default function BrowsePage() {
                 onMoveClick={(item) => setMovingItem(item)}
               />
             )}
-            {/* Pagination Component */}
-            {totalItems > 0 && (
-              <div className="mt-2">
-                <Pagination
-                  totalItems={totalItems}
-                  itemsPerPage={itemsPerPage}
-                  currentPage={safeCurrentPage}
-                  hasMore={
-                    paginationStatus === "CanLoadMore" &&
-                    !debouncedSearchTerm &&
-                    !locationFilterId
+            {/* Load More Component */}
+            <div className="mt-2">
+              <Pagination
+                itemsPerPage={itemsPerPage}
+                hasMore={hasMoreToLoad}
+                onLoadMore={() => {
+                  const newCount = loadedCount + itemsPerPage;
+                  setLoadedCount(newCount);
+                  sessionStorage.setItem(uiStorageKey, String(newCount));
+                  if (!debouncedSearchTerm && !locationFilterId) {
+                    loadMore(itemsPerPage);
                   }
-                  onPageChange={(newPage) => {
-                    if (itemsPerPage !== "all") {
-                      const newStartIndex = (newPage - 1) * itemsPerPage;
-                      // Trigger server fetch if we go beyond currently loaded items
-                      if (
-                        newStartIndex >= items.length &&
-                        paginationStatus === "CanLoadMore" &&
-                        !debouncedSearchTerm &&
-                        !locationFilterId
-                      ) {
-                        loadMore(itemsPerPage);
-                      }
-                    }
-                    setCurrentPage(newPage);
-                  }}
-                  onItemsPerPageChange={(val) => {
-                    setItemsPerPage(val);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-            )}
+                }}
+                onItemsPerPageChange={(val) => {
+                  setItemsPerPage(val);
+                }}
+              />
+            </div>
           </>
         )}
       </div>
